@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signify — Live ASL translator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Signify</div>
+  <div class="status">
+    <span id="conn" class="pill bad">disconnected</span>
+    <span id="mode" class="pill">mode: –</span>
+    <span id="fps" class="pill">– fps</span>
+  </div>
+</header>
+
+<main class="grid">
+  <!-- LEFT: the camera preview is produced by the bridge and pushed as JPEG.
+       Do NOT call getUserMedia() here: the Python process owns the camera. -->
+  <section class="card preview-card">
+    <div class="preview">
+      <img id="preview" alt="Live camera preview" src="">
+      <div id="placeholder" class="placeholder">waiting for the bridge on :8765…</div>
+      <div class="capture-bar"><div id="captureProgress"></div></div>
+    </div>
+    <div class="row">
+      <button id="btnMode" title="TAB">Mode</button>
+      <button id="btnCapture" title="SPACE">Capture 2 s</button>
+      <button id="btnSpeak" title="S">Speak</button>
+    </div>
+    <p class="hint">Space captures a word (2 s). In SPELL mode Space types a space.</p>
+  </section>
+
+  <!-- RIGHT: the routed decision. src = backend router, not re-derived here. -->
+  <section class="card result-card">
+    <h2>Recognised sign</h2>
+    <div id="kind" class="kind">—</div>
+    <div id="label" class="label">—</div>
+    <div id="detail" class="detail">not connected</div>
+    <div class="row">
+      <button id="btnConfirm" class="primary" title="ENTER">Confirm ⏎</button>
+      <button id="btnWord" title="W">Word (W)</button>
+      <button id="btnLetter" title="L">Letter (L)</button>
+    </div>
+    <div id="alternatives" class="alts"></div>
+  </section>
+
+  <!-- Possibilities: two models, their own units, never compared. -->
+  <section class="card">
+    <h2>Other possibilities</h2>
+    <div class="models">
+      <div>
+        <h3>Words <span class="unit">calibrated p</span></h3>
+        <ol id="wordTop" class="top"></ol>
+        <p id="wordNote" class="note">—</p>
+      </div>
+      <div>
+        <h3>Letters <span class="unit">softmax, uncalibrated</span></h3>
+        <ol id="letterTop" class="top"></ol>
+        <p id="letterNote" class="note">—</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Text: the bridge is authoritative (commit rules live in auto_commit + TextBuffer). -->
+  <section class="card text-card">
+    <h2>Sentence</h2>
+    <div id="text" class="sentence"><span class="muted">(empty)</span></div>
+    <div class="row">
+      <button id="btnBackspace" title="Backspace">Undo ⌫</button>
+      <button id="btnSpace" title="Space in SPELL mode">Space</button>
+      <button id="btnRepeat" title="R">Repeat letter (R)</button>
+      <button id="btnClear" class="danger" title="C">Clear (C)</button>
+    </div>
+    <p class="hint">Keys: TAB mode · SPACE capture/space · ENTER confirm · W/L pick · R repeat · BKSP undo · C clear · S speak</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>bridge: <code id="apiLabel">–</code></span>
+  <span id="err" class="err"></span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
