@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signify: your visit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#7d5ba6}a:hover{color:#5e4383}
+button{font:inherit;cursor:pointer}
+.ph{background-color:#e6f6fa;background-image:repeating-linear-gradient(45deg,transparent 0 10px,rgba(85,133,100,.10) 10px 11px)}
+</style>
+<script src="assets/view.js"></script>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Page markup (Rev 3 design). {{...}} values come from renderVals() below. -->
+<template id="view">
+<div style="min-height: 100vh; background: #fbf9fc; color: #2f2f2f; font-family: 'DM Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.5">
+<header style="background: rgba(255,255,255,.85); border-bottom: 1px solid #ece6f2">
+<div style="max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<a href="index.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #2f2f2f">
+<span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 14px; background: linear-gradient(135deg, #8fd9eb, #ffc0cb); display: flex; align-items: flex-end; justify-content: center; gap: 3px; padding-bottom: 7px; box-sizing: border-box"><span style="width: 4px; height: 12px; border-radius: 2px; background: #7d5ba6"></span><span style="width: 4px; height: 18px; border-radius: 2px; background: #7d5ba6"></span><span style="width: 4px; height: 20px; border-radius: 2px; background: #7d5ba6"></span><span style="width: 4px; height: 16px; border-radius: 2px; background: #7d5ba6"></span></span>
+<span style="font-weight: 700; font-size: 20px">Signify</span>
+</a>
+<nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px">
+<a href="index.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">Home</a>
+<a href="visit.html" aria-current="page" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: #7d5ba6; color: #ffffff; border: 1px solid #7d5ba6;">Translate</a>
+<a href="why.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">Why it matters</a>
+<a href="how.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">How it works</a>
+<a href="team.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">Team</a>
+</nav>
+</div>
+</header>
+<main style="max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; display: flex; flex-direction: column; gap: 32px">
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div>
+<span style="font-size: 13px; font-weight: 600; color: #558564">● Your information is safe · Nothing is recorded</span>
+<h1 style="margin: 6px 0 0; font-size: 36px; font-weight: 600">Your visit, in your own language</h1>
+<p style="margin: 4px 0 0; color: #444; max-width: 680px">From the front desk to the nurse to checkout, one screen goes with you. Sign or tap, and everyone you meet reads and hears you.</p>
+</div>
+<button type="button" onClick="{{toggleUrgent}}" aria-pressed="{{urgent}}" style="{{urgentStyle}}">{{urgentLabel}}</button>
+</div>
+
+<div style="display: contents"><sc-if value="{{urgent}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="background: #ffc0cb; color: #2f2f2f; border-radius: 16px; padding: 16px 20px; font-size: 18px; font-weight: 600">Staff have been alerted and are coming to you now.</div>
+</sc-if></div>
+
+<nav aria-label="Visit journey" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{stops}}" as="st" hint-placeholder-count="5">
+<button type="button" onClick="{{st.pick}}" aria-current="{{st.current}}" style="{{st.style}}">
+<span style="display: block; font-size: 12px; opacity: .85">{{st.state}}</span>
+<span style="display: block; font-size: 16px; font-weight: 700">{{st.label}}</span>
+<span style="display: block; font-size: 12px; opacity: .85">{{st.who}}</span>
+</button>
+</sc-for>
+</nav>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<section aria-label="You" style="flex: 3 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #e9f8fc, #fff0f3)">
+<div style="display: flex; align-items: center; gap: 12px">
+<span class="ph" aria-hidden="true" style="width: 48px; height: 48px; border-radius: 24px; flex: none"></span>
+<div><span style="display: block; font-size: 12px; font-weight: 600; color: #444">YOU'RE TALKING WITH</span><strong style="font-size: 20px">{{whoLabel}}</strong></div>
+</div>
+<span style="font-size: 14px; color: #444; max-width: 340px">{{stopHint}}</span>
+</div>
+
+<div style="display: contents"><sc-if value="{{isWaiting}}" hint-placeholder-val="{{false}}">
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center">
+<div style="flex: 1 1 200px"><span style="font-size: 12px; font-weight: 600; color: #444">YOUR PLACE IN LINE</span><div style="font-size: 56px; font-weight: 700; color: #7d5ba6; line-height: 1">{{queuePos}}</div><span style="color: #444">About {{queueMin}} min [ESTIMATE]</span></div>
+<div style="flex: 2 1 280px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 15px">No need to listen for your name. When it's your turn, this screen lights up and your phone buzzes [PLACEHOLDER].</span>
+<button type="button" onClick="{{callMe}}" style="min-height: 48px; padding: 0 20px; border-radius: 14px; border: none; background: #558564; color: #ffffff; font-weight: 700; align-self: flex-start">Demo: nurse calls you</button>
+</div>
+</div>
+</sc-if></div>
+
+<div style="display: contents"><sc-if value="{{isDoctor}}" hint-placeholder-val="{{false}}">
+<div role="note" style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; border: 2px solid #ffc0cb">
+<span style="font-size: 15px; max-width: 560px">For diagnosis, treatment choices or consent, a <strong>certified medical interpreter</strong> is your right. Signify helps with everything in between.</span>
+<button type="button" onClick="{{requestInterp}}" style="min-height: 48px; padding: 0 18px; border-radius: 14px; border: 1px solid #7d5ba6; background: #ffffff; color: #7d5ba6; font-weight: 700">{{interpLabel}}</button>
+</div>
+</sc-if></div>
+
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between">
+<span role="status" style="{{healthStyle}}">{{healthLabel}}</span>
+<button type="button" onClick="{{toggleSettings}}" aria-expanded="{{settingsExpanded}}" style="min-height: 40px; padding: 0 12px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; font-size: 13px; color: #2f2f2f">Settings</button>
+</div>
+<div style="display: contents"><sc-if value="{{settingsOpen}}">
+<form onSubmit="{{saveSettings}}" style="background: #f3eefa; border-radius: 16px; padding: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end">
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; flex: 1 1 240px">Backend URL<input type="url" value="{{apiDraft}}" onChange="{{onApiDraft}}" spellcheck="false" style="min-height: 44px; border: 1px solid #8a7f99; border-radius: 14px; padding: 0 12px; font: inherit; font-weight: 400"></label>
+<label style="display: flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px"><input type="checkbox" checked="{{demoDraft}}" onChange="{{toggleDemoDraft}}" style="width: 20px; height: 20px; accent-color: #7d5ba6"> Demo mode (simulated signs, no backend)</label>
+<button type="submit" style="min-height: 44px; padding: 0 18px; border-radius: 14px; border: none; background: #7d5ba6; color: #ffffff; font-weight: 700">Save</button>
+</form>
+</sc-if></div>
+<div class="ph" style="{{camStyle}}">
+<video id="preview" autoplay muted playsinline aria-label="Your camera" style="{{videoStyle}}"></video>
+<sc-if value="{{camPrompt}}"><div style="position: relative; text-align: center; color: #444; font-size: 14px; padding: 16px; max-width: 360px">{{camPromptText}}</div></sc-if>
+<sc-if value="{{showOverlay}}" hint-placeholder-val="{{false}}">
+<div style="position: absolute; left: 16px; right: 16px; bottom: 16px; background: rgba(255,255,255,.95); border-radius: 16px; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 8px 24px rgba(47,47,47,.12)">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 44px; font-weight: 700; color: #7d5ba6; line-height: 1">{{liveWord}}</span><span style="font-size: 13px; color: #444">{{holdLabel}}</span></div>
+<div style="height: 8px; background: #ece6f2; border-radius: 4px; overflow: hidden"><div style="{{holdStyle}}"></div></div>
+</div>
+</sc-if>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<sc-if value="{{isDemo}}"><button type="button" onClick="{{toggleRun}}" style="{{runStyle}}">{{runLabel}}</button></sc-if>
+<sc-if value="{{isLive}}">
+<button type="button" onClick="{{toggleCam}}" style="{{camBtnStyle}}">{{camBtnLabel}}</button>
+<button type="button" onClick="{{record}}" disabled="{{recDisabled}}" style="{{recStyle}}">{{recLabel}}</button>
+<label style="position: relative; overflow: hidden; min-height: 48px; padding: 0 18px; border-radius: 14px; border: 1px solid #7d5ba6; background: #ffffff; color: #7d5ba6; font-weight: 600; display: inline-flex; align-items: center; cursor: pointer">Upload a clip<input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" onChange="{{onFile}}" aria-label="Upload a video clip of one sign" style="position: absolute; inset: 0; opacity: 0; cursor: pointer"></label>
+</sc-if>
+<span style="font-size: 14px; color: #444">{{signHint}}</span>
+</div>
+<div aria-live="polite" style="{{statusStyle}}">{{statusText}}</div>
+<div aria-live="polite" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 48px">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="0"><button type="button" onClick="{{c.fix}}" aria-label="{{c.aria}}" style="{{c.style}}">{{c.word}}</button></sc-for>
+</div>
+<div style="display: contents"><sc-if value="{{picking}}">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="font-size: 14px; color: #444">Did you mean:</span>
+<sc-for list="{{altChoices}}" as="a"><button type="button" onClick="{{a.pick}}" style="min-height: 44px; padding: 0 14px; border-radius: 22px; border: 1px solid #7d5ba6; background: #ffffff; color: #7d5ba6; font-weight: 600">{{a.label}}</button></sc-for>
+</div>
+</sc-if></div>
+<sc-if value="{{hasDraft}}" hint-placeholder-val="{{false}}">
+<div style="background: #f3eefa; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 12px; font-weight: 600; color: #444">IS THIS RIGHT?</span>
+<div style="font-size: 28px; font-weight: 600; line-height: 1.25">{{draftEnglish}}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" onClick="{{sendSigned}}" style="min-height: 52px; padding: 0 24px; border-radius: 14px; border: none; background: #558564; color: #ffffff; font-weight: 700; font-size: 17px">Yes, say it</button>
+<button type="button" onClick="{{undo}}" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">Undo last sign</button>
+<button type="button" onClick="{{clearSigns}}" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">Start over</button>
+</div>
+</div>
+</sc-if>
+</div>
+
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Or tap to say</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{phrases}}" as="q" hint-placeholder-count="4"><button type="button" onClick="{{q.say}}" style="min-height: 48px; padding: 0 16px; border-radius: 24px; border: 1px solid #7d5ba6; background: #ffffff; color: #7d5ba6; font-weight: 600; font-size: 15px">{{q.label}}</button></sc-for>
+</div>
+<sc-if value="{{showPain}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px">
+<span style="font-weight: 600">Pain level</span>
+<div role="group" aria-label="Pain level 0 to 10" style="display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 4px">
+<sc-for list="{{pain}}" as="p" hint-placeholder-count="11"><button type="button" onClick="{{p.pick}}" aria-label="{{p.aria}}" style="min-height: 44px; border-radius: 14px; font-weight: 700; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">{{p.n}}</button></sc-for>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #444"><span>No pain</span><span>Worst pain</span></div>
+</div>
+</sc-if>
+</div>
+</section>
+
+<aside style="flex: 2 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Conversation · {{stopName}}</h2>
+<button type="button" onClick="{{toggleFlip}}" aria-pressed="{{flipped}}" style="min-height: 40px; padding: 0 12px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; font-size: 13px; color: #2f2f2f">{{flipLabel}}</button>
+</div>
+<div style="{{threadStyle}}">
+<sc-if value="{{noThread}}" hint-placeholder-val="{{true}}"><p style="margin: 0; color: #444; font-size: 14px">Sign or tap to start. What you say appears here, big enough for {{whoShort}} to read.</p></sc-if>
+<sc-for list="{{thread}}" as="m" hint-placeholder-count="0">
+<div style="{{m.style}}"><span style="display: block; font-size: 12px; font-weight: 600; opacity: .8">{{m.who}}</span>{{m.text}}</div>
+</sc-for>
+</div>
+<span style="font-size: 13px; font-weight: 600; color: #444">{{staffTitle}}: quick replies</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{replies}}" as="r" hint-placeholder-count="3"><button type="button" onClick="{{r.send}}" style="min-height: 40px; padding: 0 12px; border-radius: 20px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f; font-size: 14px">{{r.label}}</button></sc-for>
+</div>
+<form onSubmit="{{reply}}" style="display: flex; gap: 8px">
+<label for="staffReply" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Staff reply</label>
+<input id="staffReply" value="{{draft}}" onChange="{{onDraft}}" placeholder="Staff: type or tap mic…" style="flex: 1; min-width: 0; min-height: 44px; border: 1px solid #8a7f99; border-radius: 14px; padding: 0 12px; font: inherit">
+<button type="submit" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">Send</button>
+<button type="button" onClick="{{listen}}" aria-pressed="{{listeningStr}}" aria-label="Speak a reply (speech to text)" style="{{micStyle}}">{{micLabel}}</button>
+</form>
+</div>
+
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Your voice (text to speech)</h2>
+<span style="font-size: 12px; padding: 2px 10px; border-radius: 14px; background: #ffc0cb">Browser voice</span>
+</div>
+<div role="group" aria-label="Voice" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{voices}}" as="v" hint-placeholder-count="3"><button type="button" onClick="{{v.pick}}" aria-pressed="{{v.on}}" style="{{v.style}}"><strong style="display: block">{{v.label}}</strong><span style="font-size: 12px">{{v.desc}}</span></button></sc-for>
+</div>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><span style="width: 60px">Speed</span><input type="range" min="1" max="5" value="{{speed}}" onChange="{{setSpeed}}" style="flex: 1; accent-color: #7d5ba6"><span style="width: 60px">{{speedLabel}}</span></label>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><span style="width: 60px">Volume</span><input type="range" min="1" max="5" value="{{vol}}" onChange="{{setVol}}" style="flex: 1; accent-color: #7d5ba6"><span style="width: 60px">{{volLabel}}</span></label>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked="{{autoSpeak}}" onChange="{{toggleAuto}}" style="width: 20px; height: 20px; accent-color: #7d5ba6"><span>Speak out loud when I send</span></label>
+<sc-if value="{{speaking}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; align-items: center; gap: 10px; background: #f3eefa; border-radius: 14px; padding: 10px 14px; font-size: 14px">
+<span aria-hidden="true" style="display: flex; gap: 3px; align-items: flex-end; height: 18px"><span style="width: 4px; height: 8px; background: #7d5ba6; border-radius: 2px"></span><span style="width: 4px; height: 16px; background: #7d5ba6; border-radius: 2px"></span><span style="width: 4px; height: 11px; background: #7d5ba6; border-radius: 2px"></span><span style="width: 4px; height: 18px; background: #7d5ba6; border-radius: 2px"></span></span>
+<span>Speaking: “{{nowSaying}}”</span></div>
+</sc-if>
+</div>
+</aside>
+</div>
+
+<section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 600">Your visit so far</h2>
+<button type="button" onClick="{{copySummary}}" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">{{copyLabel}}</button>
+</div>
+<sc-if value="{{noLog}}" hint-placeholder-val="{{true}}"><p style="margin: 0; color: #444">Everything said at each stop is kept here, so you never have to repeat yourself. [CONFIRM: cleared when the visit ends]</p></sc-if>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+<sc-for list="{{log}}" as="g" hint-placeholder-count="0">
+<div style="border: 1px solid #ece6f2; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px">
+<strong style="color: #7d5ba6">{{g.stop}}</strong>
+<sc-for list="{{g.lines}}" as="l" hint-placeholder-count="1"><span style="font-size: 14px"><strong>{{l.who}}:</strong> {{l.text}}</span></sc-for>
+</div>
+</sc-for>
+</div>
+</section>
+</main>
+<footer style="border-top: 1px solid #ece6f2; background: #ffffff">
+<div style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 13px; color: #555">
+<span>Signify, a hackathon project · <a href="https://github.com/Erm-Huh/Signify">GitHub</a> · [DEVPOST LINK]</span>
+<span>Clinical revision v0.3</span>
+</div>
+</footer>
+</div>
+</template>
+
+<script>
+// Live mode talks to the SignBridge backend (water_backend/): record ~3 s or upload a clip -> POST /predict.
+// Demo mode keeps the original Rev 3 simulation (no backend needed).
+const DEFAULT_API = 'http://localhost:8000';
+const RECORD_MS = 3000;
+const ERRORS = {
+  no_hands_detected: 'We couldn’t see your hands. Step back so your chest and both hands are in view.',
+  sign_too_short: 'That was too quick. Hold the sign a little longer and try again.',
+  video_too_long: 'That clip was too long. Record just one sign (about 3 seconds).',
+  file_too_large: 'That file is too big. Try a shorter clip.',
+  unsupported_file_type: 'That file type is not supported. Use mp4, mov or webm.',
+  unreadable_video: 'We couldn’t read that video. Try recording again.',
+  empty_or_corrupt_video: 'We couldn’t read that video. Try recording again.',
+  empty_file: 'The recording was empty. Try again.',
+  model_unavailable: 'The sign model is not loaded on the server.',
+  network: 'Can’t reach the sign server. Check Settings, or turn on Demo mode.'
+};
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const pct = (x) => Math.round((x || 0) * 100) + '%';
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.stops = [
+      { id: 'desk', label: 'Front desk', who: 'Receptionist', name: 'Front desk · [NAME]', hint: 'Tell them why you’re here. They’ll check you in.',
+        gloss: ['HEAD', 'PAIN', 'TWO', 'DAY'], alts: ['THINK', 'HURT', 'THREE', 'WEEK'], english: 'I’ve had a headache for two days.',
+        phrases: ['I’m here to check in', 'I have an appointment', 'I’m a new patient', 'Here’s my insurance card'],
+        replies: ['Please take a seat', 'Can I see your ID?', 'Please fill out this form'], auto: 'Thanks! You’re checked in. Please take a seat.' },
+      { id: 'wait', label: 'Waiting room', who: 'Staff', name: 'Waiting room staff', hint: 'Ask anything while you wait. Your turn shows up here.',
+        gloss: ['TIME', 'HOW-LONG'], alts: ['WHEN', 'MANY'], english: 'How much longer will it be?',
+        phrases: ['How much longer?', 'Where is the restroom?', 'I feel worse', 'Can I get water?'],
+        replies: ['About 10 more minutes', 'Restroom is down the hall', 'I’ll let the nurse know'], auto: 'About 10 more minutes. We’ll show it here when it’s your turn.' },
+      { id: 'nurse', label: 'Nurse', who: 'Nurse', name: 'Nurse · [NAME], RN', hint: 'Vitals and symptoms. Share pain level, allergies and medicines.',
+        gloss: ['ME', 'ALLERGIC', 'PENICILLIN'], alts: ['MY', 'SICK', 'MEDICINE'], english: 'I’m allergic to penicillin.',
+        phrases: ['It started 2 days ago', 'I take [MEDICATION]', 'It hurts here', 'I feel dizzy'],
+        replies: ['Thanks, I’ve noted that', 'I’m going to check your blood pressure', 'Any other allergies?'], auto: 'Thank you, I’ve added that to your chart.' },
+      { id: 'doctor', label: 'Doctor', who: 'Doctor', name: 'Doctor · Dr. [NAME]', hint: 'Ask questions in your words. Ask them to slow down or write things down.',
+        gloss: ['WHAT', 'MEAN'], alts: ['WHY', 'MEANING'], english: 'What does that mean?',
+        phrases: ['Please slow down', 'Can you write that down?', 'What are my options?', 'I understand'],
+        replies: ['Let me explain another way', 'I’ll write it down for you', 'Do you have any questions?'], auto: 'Let me explain that another way.' },
+      { id: 'out', label: 'Checkout', who: 'Checkout desk', name: 'Checkout / pharmacy', hint: 'Prescriptions, follow-ups and anything you want in writing.',
+        gloss: ['MEDICINE', 'HOW-MANY', 'DAY'], alts: ['PILL', 'WHEN', 'WEEK'], english: 'How many times a day do I take this medicine?',
+        phrases: ['When is my follow-up?', 'Can I get a printed summary?', 'Thank you', 'Where do I pick up my prescription?'],
+        replies: ['Twice a day with food', 'Your follow-up is in 2 weeks', 'Here is your printed summary'], auto: 'Twice a day with food. I’ll print it for you.' }
+    ];
+    this.state = { stop: 0, visited: [0], running: false, chips: [], hold: 0, flash: false, urgent: false, interp: false,
+      threads: [[], [], [], [], []], voice: 0, speed: 3, vol: 4, auto: true, saying: '', flipped: false, draft: '', copied: false, queue: 2,
+      api: store.get('signify.api') || DEFAULT_API, demo: store.get('signify.demo') === '1', health: 'wait',
+      settingsOpen: false, apiDraft: '', demoDraft: false,
+      camOn: false, recording: false, recPct: 0, busy: false, last: null, status: null, picking: null, listening: false };
+    this.timer = null; this.sayT = null; this.replyT = null; this.sayId = 0;
+    this.stream = null; this.recorder = null; this.recT = null; this.rec = null;
+  }
+  componentDidMount() { this.checkHealth(); if (window.speechSynthesis) speechSynthesis.getVoices(); }
+  componentWillUnmount() { this.stop(); this.camOff(); [this.sayT, this.replyT].forEach((t) => t && clearTimeout(t)); }
+  // view.js re-renders by patching; make sure the <video> always shows the live camera stream.
+  _render() {
+    super._render();
+    const v = document.getElementById('preview');
+    if (!v) return;
+    if (this.stream && v.srcObject !== this.stream) { v.muted = true; v.srcObject = this.stream; v.play().catch(() => {}); }
+    else if (!this.stream && v.srcObject) v.srcObject = null;
+  }
+  stop() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
+
+  /* ---------- speech (browser text to speech) ---------- */
+  say(t) {
+    if (!this.state.auto || !t) return;
+    if (this.sayT) clearTimeout(this.sayT);
+    const id = ++this.sayId;
+    const done = () => { if (id === this.sayId) this.setState({ saying: '' }); };
+    this.setState({ saying: t });
+    if (!window.speechSynthesis) { this.sayT = setTimeout(done, 2200); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(t);
+    const en = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
+    if (en.length) u.voice = en.find((v) => v.default) || en[0];
+    u.pitch = [1, 1.25, 0.8][this.state.voice];          // Warm / Bright / Deep
+    u.rate = [0.7, 0.85, 1, 1.2, 1.4][this.state.speed - 1];
+    u.volume = [0.2, 0.4, 0.6, 0.8, 1][this.state.vol - 1];
+    u.onend = done; u.onerror = done;
+    speechSynthesis.speak(u);
+    this.sayT = setTimeout(done, 20000);                   // safety net if onend never fires
+  }
+
+  /* ---------- staff reply by voice (speech to text) ---------- */
+  listen() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { this.setState({ status: { text: 'Speech to text isn’t supported in this browser. Type the reply instead.', kind: 'error' } }); return; }
+    if (this.rec) { this.rec.stop(); return; }
+    const r = new SR();
+    r.lang = 'en-US'; r.interimResults = true;
+    r.onresult = (e) => this.setState({ draft: Array.from(e.results).map((x) => x[0].transcript).join('') });
+    r.onend = () => { this.rec = null; this.setState({ listening: false }); };
+    r.onerror = () => {};
+    this.rec = r; r.start(); this.setState({ listening: true });
+  }
+
+  /* ---------- backend ---------- */
+  async checkHealth() {
+    if (this.state.demo) { this.setState({ health: 'demo' }); return; }
+    this.setState({ health: 'wait' });
+    try {
+      const r = await fetch(this.state.api + '/health');
+      const j = await r.json();
+      this.setState({ health: j.model_loaded ? 'ok' : 'nomodel' });
+    } catch (e) { this.setState({ health: 'bad' }); }
+  }
+  async predict(blob, name) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, last: null, picking: null, status: { text: 'Reading your sign… this takes a few seconds.', kind: 'info' } });
+    try {
+      let r;
+      try { const fd = new FormData(); fd.append('file', blob, name); r = await fetch(this.state.api + '/predict', { method: 'POST', body: fd }); }
+      catch (e) { throw { code: 'network' }; }
+      let j;
+      try { j = await r.json(); } catch (e) { throw { message: 'The server sent an unexpected reply (HTTP ' + r.status + ').' }; }
+      if (j.status !== 'success') throw (j.error || {});
+      this.addResult(j);
+    } catch (err) {
+      this.setState({ status: { text: ERRORS[err && err.code] || (err && err.message) || 'Something went wrong. Try again.', kind: 'error' } });
+    } finally { this.setState({ busy: false }); }
+  }
+  addResult(j) {
+    const alts = (j.top_predictions || []).map((t) => ({ label: t.label, confidence: t.confidence }));
+    const chip = { word: String(j.prediction).toUpperCase(), unsure: !j.confident, conf: j.confidence, alts: alts };
+    const chips = this.state.chips.concat(chip);
+    this.setState({ chips: chips, last: { word: chip.word, confident: j.confident, conf: j.confidence }, flash: true,
+      picking: j.confident ? null : chips.length - 1,
+      status: j.confident ? null : { text: 'Not sure. Pick the right word below, or record again.', kind: 'info' } });
+    setTimeout(() => this.setState({ flash: false }), 350);
+  }
+
+  /* ---------- camera + recording ---------- */
+  async toggleCam() {
+    if (this.stream) { this.camOff(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      this.setState({ status: { text: 'This browser can’t use the camera here (it needs https or localhost). Use “Upload a clip”.', kind: 'error' } }); return;
+    }
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ video: { width: 960, height: 720 }, audio: false });
+      this.setState({ camOn: true, status: { text: 'Camera on. Press “Record a sign” when you’re ready.', kind: 'info' } });
+    } catch (e) {
+      this.setState({ status: { text: 'Camera blocked. Allow camera access, or use “Upload a clip”.', kind: 'error' } });
+    }
+  }
+  camOff() {
+    if (this.recorder) { this.recorder.onstop = null; try { this.recorder.stop(); } catch (e) {} this.recorder = null; }
+    if (this.recT) { clearInterval(this.recT); this.recT = null; }
+    if (this.stream) { this.stream.getTracks().forEach((t) => t.stop()); this.stream = null; }
+    this.setState({ camOn: false, recording: false, recPct: 0 });
+  }
+  record() {
+    if (!this.stream || this.state.busy) return;
+    if (this.recorder) { this.recorder.stop(); return; }        // second press stops early
+    if (!window.MediaRecorder) { this.setState({ status: { text: 'Recording isn’t supported in this browser. Use “Upload a clip”.', kind: 'error' } }); return; }
+    const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
+    const rec = new MediaRecorder(this.stream, mime ? { mimeType: mime } : undefined);
+    const parts = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) parts.push(e.data); };
+    rec.onstop = () => {
+      clearInterval(this.recT); this.recT = null; this.recorder = null;
+      this.setState({ recording: false, recPct: 0 });
+      const type = rec.mimeType || mime || 'video/webm';
+      this.predict(new Blob(parts, { type: type }), 'sign.' + (type.indexOf('mp4') > -1 ? 'mp4' : 'webm'));
+    };
+    this.recorder = rec; rec.start();
+    const t0 = Date.now();
+    this.setState({ recording: true, recPct: 0, last: null, picking: null, status: null });
+    this.recT = setInterval(() => {
+      const p = Math.min(1, (Date.now() - t0) / RECORD_MS);
+      this.setState({ recPct: Math.round(p * 100) });
+      if (p >= 1 && rec.state === 'recording') rec.stop();
+    }, 100);
+  }
+  push(who, text, mine) {
+    const th = this.state.threads.map((x) => x.slice()); th[this.state.stop].push({ who: who, text: text, mine: mine });
+    this.setState({ threads: th });
+  }
+  patientSays(text) {
+    const at = this.state.stop; const s = this.stops[at];
+    this.push('You', text, true); this.say(text);
+    if (!this.state.demo) return;                           // live mode: real staff reply via the box, quick replies or mic
+    if (this.replyT) clearTimeout(this.replyT);
+    this.replyT = setTimeout(() => { if (this.state.stop === at) this.push(s.who, s.auto, false); }, 1600);
+  }
+  tick() {
+    const g = this.stops[this.state.stop].gloss; const n = this.state.chips.length;
+    if (n >= g.length) { this.stop(); this.setState({ running: false }); return; }
+    const h = this.state.hold + 25;
+    if (h < 100) { this.setState({ hold: h }); return; }
+    this.setState({ chips: this.state.chips.concat({ word: g[n], alt: this.stops[this.state.stop].alts[n], unsure: n === g.length - 1 && g.length > 2 }), hold: 0, flash: true });
+    setTimeout(() => this.setState({ flash: false }), 300);
+  }
+  go(i) { this.stop(); const v = this.state.visited.indexOf(i) > -1 ? this.state.visited : this.state.visited.concat(i); this.setState({ stop: i, visited: v, chips: [], running: false, hold: 0, last: null, picking: null, status: null }); }
+  renderVals() {
+    const s = this.state; const st = this.stops[s.stop];
+    const LIL = '#7d5ba6', TEAL = '#558564', PINK = '#ffc0cb', BLUE = '#8fd9eb', GR = '#2f2f2f';
+    const n = s.chips.length; const done = n >= st.gloss.length;
+    const words = s.chips.map((c) => c.word).join(' ');
+    const matches = words === st.gloss.join(' ');
+    const live = !s.demo;
+    const lw = words.toLowerCase();
+    const draftEnglish = live ? (lw ? lw.charAt(0).toUpperCase() + lw.slice(1) + '.' : '')
+      : (matches ? st.english : (words ? words.charAt(0) + words.slice(1).toLowerCase() + (done ? '.' : '…') : ''));
+    const btn = (primary, off) => 'min-height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 600; ' + (off ? 'opacity: .45; cursor: not-allowed; ' : '') +
+      (primary ? 'background: ' + LIL + '; color: #ffffff; border: 1px solid ' + LIL + ';' : 'background: #ffffff; color: ' + LIL + '; border: 1px solid ' + LIL + ';');
+    const HEALTH = { wait: ['Checking sign server…', '#f3eefa', LIL], ok: ['Sign model ready', '#eaf4ee', '#2f5a3c'], nomodel: ['Model not loaded', '#fff0f3', '#8a2a3a'],
+      bad: ['Sign server offline', '#fff0f3', '#8a2a3a'], demo: ['Demo mode', '#f3eefa', LIL] }[s.health] || ['', '#fff', GR];
+    const pickChip = s.picking != null ? s.chips[s.picking] : null;
+    const pill = (on) => on ? 'background: ' + LIL + '; color: #ffffff; border: 1px solid ' + LIL + ';' : 'background: #ffffff; color: ' + GR + '; border: 1px solid #8a7f99;';
+    const voices = [['Warm', 'calm, mid-pitch'], ['Bright', 'younger, clear'], ['Deep', 'low, steady']];
+    const sp = ['Slowest', 'Slow', 'Normal', 'Fast', 'Fastest'], vl = ['Quiet', 'Low', 'Medium', 'Loud', 'Max'];
+    const log = this.stops.map((x, i) => ({ stop: x.label, lines: s.threads[i].map((m) => ({ who: m.who, text: m.text })) })).filter((g) => g.lines.length);
+    return {
+      stops: this.stops.map((x, i) => { const cur = i === s.stop; const seen = s.visited.indexOf(i) > -1 && !cur;
+        return { label: x.label, who: x.who, current: cur ? 'step' : 'false', state: cur ? 'Now' : (seen ? '✓ Visited' : 'Next'), pick: () => this.go(i),
+          style: 'text-align: left; min-height: 72px; padding: 10px 14px; border-radius: 16px; ' + (cur ? 'background: ' + LIL + '; color: #ffffff; border: 1px solid ' + LIL + ';' : (seen ? 'background: #eaf4ee; color: ' + GR + '; border: 1px solid #cfe3d6;' : 'background: #ffffff; color: ' + GR + '; border: 1px solid #ece6f2;')) }; }),
+      urgent: s.urgent, toggleUrgent: () => this.setState({ urgent: !s.urgent }),
+      urgentLabel: s.urgent ? 'Cancel alert' : 'I need help now',
+      urgentStyle: 'min-height: 52px; padding: 0 22px; border-radius: 16px; font-weight: 700; font-size: 16px; ' + (s.urgent ? 'background: #ffffff; color: ' + GR + '; border: 2px solid ' + GR + ';' : 'background: ' + PINK + '; color: ' + GR + '; border: 2px solid ' + PINK + ';'),
+      whoLabel: st.name, whoShort: st.who.toLowerCase(), stopHint: st.hint, stopName: st.label, staffTitle: st.who,
+      isWaiting: st.id === 'wait', isDoctor: st.id === 'doctor', showPain: st.id === 'nurse' || st.id === 'desk',
+      queuePos: s.queue === 0 ? 'Now' : '#' + s.queue, queueMin: s.queue * 5,
+      callMe: () => { this.setState({ queue: 0 }); this.push('Nurse', 'We’re ready for you. Please come to room 3.', false); setTimeout(() => this.go(2), 1800); },
+      requestInterp: () => { this.setState({ interp: true }); this.push('System', 'A certified medical interpreter has been requested [VRI / in-person].', false); },
+      interpLabel: s.interp ? 'Interpreter requested ✓' : 'Request an interpreter',
+      running: s.running,
+      isDemo: !live, isLive: live,
+      healthLabel: HEALTH[0], healthStyle: 'font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 16px; background: ' + HEALTH[1] + '; color: ' + HEALTH[2],
+      settingsOpen: s.settingsOpen, settingsExpanded: s.settingsOpen ? 'true' : 'false',
+      toggleSettings: () => this.setState(s.settingsOpen ? { settingsOpen: false } : { settingsOpen: true, apiDraft: s.api, demoDraft: s.demo }),
+      apiDraft: s.apiDraft, onApiDraft: (e) => this.setState({ apiDraft: e.target.value }),
+      demoDraft: s.demoDraft, toggleDemoDraft: (e) => this.setState({ demoDraft: e.target.checked }),
+      saveSettings: (e) => {
+        e.preventDefault();
+        const api = (s.apiDraft || '').trim().replace(/\/+$/, '') || DEFAULT_API;
+        if (s.demoDraft) this.camOff(); else { this.stop(); }
+        this.setState({ api: api, demo: s.demoDraft, settingsOpen: false, chips: [], running: false, hold: 0, last: null, picking: null, status: null });
+        store.set('signify.api', api); store.set('signify.demo', s.demoDraft ? '1' : '0');
+        this.checkHealth();
+      },
+      camStyle: 'position: relative; overflow: hidden; height: 300px; border-radius: 16px; display: flex; align-items: center; justify-content: center; ' + (s.flash ? 'border: 5px solid ' + TEAL + ';' : 'border: 1px solid #ece6f2;'),
+      videoStyle: 'position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); ' + (live && s.camOn ? '' : 'display: none;'),
+      camPrompt: !(live && s.camOn),
+      camPromptText: live ? 'Turn on the camera, or upload a clip. Keep your chest and both hands in view.' : 'Demo mode: signs are simulated. Press “Start signing”.',
+      showOverlay: live ? (s.recording || s.busy || !!s.last) : s.running,
+      liveWord: live ? (s.recording ? 'Sign now' : s.busy ? 'Reading…' : s.last ? (s.last.confident ? s.last.word : 'Not sure') : '')
+        : (done ? 'Got it' : st.gloss[Math.min(n, st.gloss.length - 1)]),
+      holdLabel: live ? (s.recording ? 'Recording ' + (RECORD_MS / 1000 * (1 - s.recPct / 100)).toFixed(1) + ' s' : s.busy ? 'A few seconds…'
+          : s.last ? (s.last.confident ? 'Caught ✓ ' + pct(s.last.conf) : 'Best guess: ' + s.last.word + ' ' + pct(s.last.conf)) : '')
+        : (s.flash ? 'Caught ✓' : 'Hold steady…'),
+      holdStyle: 'height: 8px; background: ' + TEAL + '; border-radius: 4px; transition: width .1s linear; width: ' +
+        (live ? (s.recording ? s.recPct : s.busy ? 100 : s.last ? Math.round(s.last.conf * 100) : 0) : (s.flash ? 100 : s.hold)) + '%',
+      toggleCam: () => this.toggleCam(), camBtnLabel: s.camOn ? 'Turn off camera' : 'Turn on camera', camBtnStyle: btn(!s.camOn, false),
+      record: () => this.record(), recDisabled: !s.camOn || s.busy, recLabel: s.recording ? 'Stop' : 'Record a sign',
+      recStyle: s.recording ? 'min-height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 700; background: #ffc0cb; color: ' + GR + '; border: 1px solid #ffc0cb;' : btn(s.camOn, !s.camOn || s.busy),
+      onFile: (e) => { const f = e.target.files && e.target.files[0]; if (f) this.predict(f, f.name); e.target.value = ''; },
+      signHint: live ? 'One sign per clip, about 3 seconds. Tap a word to fix it.' : 'Every sign is kept the moment you make it. Tap a dashed one to fix it.',
+      statusText: s.status ? s.status.text : '',
+      statusStyle: !s.status ? 'min-height: 0' : s.status.kind === 'error'
+        ? 'color: #8a2a3a; background: #fff0f3; padding: 10px 14px; border-radius: 14px; font-weight: 600; font-size: 15px'
+        : 'color: #2f2f2f; font-weight: 600; font-size: 15px',
+      picking: !!(pickChip && pickChip.alts && pickChip.alts.length),
+      altChoices: pickChip && pickChip.alts ? pickChip.alts.map((a) => ({ label: a.label.toUpperCase() + ' · ' + pct(a.confidence),
+        pick: () => { const cs = s.chips.slice(); cs[s.picking] = Object.assign({}, pickChip, { word: a.label.toUpperCase(), unsure: false, conf: a.confidence }); this.setState({ chips: cs, picking: null, status: null }); } })) : [],
+      listen: () => this.listen(), listeningStr: s.listening ? 'true' : 'false', micLabel: s.listening ? 'Stop' : 'Mic',
+      micStyle: 'min-height: 44px; padding: 0 16px; border-radius: 14px; ' + (s.listening ? 'border: 1px solid ' + LIL + '; background: ' + LIL + '; color: #ffffff;' : 'border: 1px solid #8a7f99; background: #ffffff; color: ' + GR + ';'),
+      toggleRun: () => { if (s.running) { this.stop(); this.setState({ running: false }); } else { if (done) this.setState({ chips: [] }); this.setState({ running: true }); this.timer = setInterval(() => this.tick(), 200); } },
+      runLabel: s.running ? 'Pause' : (done ? 'Sign something else' : (n ? 'Keep signing' : 'Start signing')),
+      runStyle: 'min-height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 600; ' + (s.running ? 'background: #ffffff; color: ' + LIL + '; border: 1px solid ' + LIL + ';' : 'background: ' + LIL + '; color: #ffffff; border: 1px solid ' + LIL + ';'),
+      chips: s.chips.map((c, i) => ({ word: c.word,
+        aria: c.alts ? c.word + (c.unsure ? ', unsure' : '') + '. Tap to choose another guess' : (c.unsure ? c.word + ', unsure. Tap to change to ' + c.alt : c.word),
+        style: 'min-height: 44px; padding: 0 16px; border-radius: 22px; font-weight: 700; ' + (c.unsure ? 'background: #ffffff; color: ' + GR + '; border: 2px dashed ' + LIL + ';' : 'background: #e9f8fc; color: ' + GR + '; border: 2px solid ' + BLUE + ';') +
+          (s.picking === i ? ' box-shadow: 0 0 0 4px #f3eefa;' : ''),
+        fix: () => { if (c.alts) { this.setState({ picking: s.picking === i ? null : i }); return; } if (!c.unsure) return; const cs = s.chips.slice(); cs[i] = { word: c.alt, alt: c.word, unsure: false }; this.setState({ chips: cs }); } })),
+      hasDraft: n > 0, draftEnglish: draftEnglish,
+      sendSigned: () => { this.stop(); this.patientSays(draftEnglish.replace(/…$/, '.')); this.setState({ chips: [], running: false, picking: null, last: null, status: null }); },
+      undo: () => this.setState({ chips: s.chips.slice(0, -1), picking: null }),
+      clearSigns: () => { this.stop(); this.setState({ chips: [], running: false, picking: null, last: null, status: null }); },
+      phrases: st.phrases.map((p) => ({ label: p, say: () => this.patientSays(p) })),
+      pain: Array.from({ length: 11 }, (_, i) => ({ n: i, aria: 'Pain ' + i + ' of 10', pick: () => this.patientSays('My pain is ' + i + ' out of 10.') })),
+      thread: s.threads[s.stop].map((m) => ({ who: m.who, text: m.text,
+        style: 'max-width: 88%; padding: 10px 14px; border-radius: 16px; font-size: 18px; line-height: 1.35; ' + (m.mine ? 'align-self: flex-start; background: ' + LIL + '; color: #ffffff;' : (m.who === 'System' ? 'align-self: center; background: #eaf4ee; color: ' + GR + '; font-size: 14px;' : 'align-self: flex-end; background: ' + PINK + '; color: ' + GR + ';')) })),
+      noThread: s.threads[s.stop].length === 0,
+      threadStyle: 'display: flex; flex-direction: column; gap: 8px; min-height: 200px; max-height: 360px; overflow-y: auto; background: #fbf9fc; border-radius: 14px; padding: 12px; transition: transform .3s; ' + (s.flipped ? 'transform: rotate(180deg);' : ''),
+      flipped: s.flipped, toggleFlip: () => this.setState({ flipped: !s.flipped }), flipLabel: s.flipped ? 'Unflip' : 'Flip for staff',
+      replies: st.replies.map((t) => ({ label: t, send: () => this.push(st.who, t, false) })),
+      draft: s.draft, onDraft: (e) => this.setState({ draft: e.target.value }),
+      reply: (e) => { e.preventDefault(); const t = s.draft.trim(); if (t) { this.push(st.who, t, false); this.setState({ draft: '' }); } },
+      voices: voices.map((v, i) => ({ label: v[0], desc: v[1], on: s.voice === i, pick: () => this.setState({ voice: i }),
+        style: 'min-height: 60px; padding: 8px; border-radius: 14px; text-align: left; ' + pill(s.voice === i) })),
+      speed: s.speed, setSpeed: (e) => this.setState({ speed: Number(e.target.value) }), speedLabel: sp[s.speed - 1],
+      vol: s.vol, setVol: (e) => this.setState({ vol: Number(e.target.value) }), volLabel: vl[s.vol - 1],
+      autoSpeak: s.auto, toggleAuto: () => this.setState({ auto: !s.auto }),
+      speaking: !!s.saying, nowSaying: s.saying,
+      log: log, noLog: log.length === 0,
+      copyLabel: s.copied ? 'Copied ✓' : 'Copy visit summary',
+      copySummary: () => { const t = log.map((g) => g.stop + '\n' + g.lines.map((l) => l.who + ': ' + l.text).join('\n')).join('\n\n');
+        try { if (navigator.clipboard) navigator.clipboard.writeText(t).catch(() => {}); } catch (e) {} this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1500); }
+    };
+  }
+}
+window.Component = Component;
+</script>
+</body>
+</html>

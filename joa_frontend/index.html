@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signify: ASL to speech for clinics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#7d5ba6}a:hover{color:#5e4383}
+button{font:inherit;cursor:pointer}
+.ph{background-color:#e6f6fa;background-image:repeating-linear-gradient(45deg,transparent 0 10px,rgba(85,133,100,.10) 10px 11px)}
+</style>
+<script src="assets/view.js"></script>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Page markup (Rev 3 design). {{...}} values come from renderVals() below. -->
+<template id="view">
+<div style="min-height: 100vh; background: #fbf9fc; color: #2f2f2f; font-family: 'DM Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.5">
+<header style="background: rgba(255,255,255,.85); border-bottom: 1px solid #ece6f2">
+<div style="max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<a href="index.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #2f2f2f">
+<span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 14px; background: linear-gradient(135deg, #8fd9eb, #ffc0cb); display: flex; align-items: flex-end; justify-content: center; gap: 3px; padding-bottom: 7px; box-sizing: border-box"><span style="width: 4px; height: 12px; border-radius: 2px; background: #7d5ba6"></span><span style="width: 4px; height: 18px; border-radius: 2px; background: #7d5ba6"></span><span style="width: 4px; height: 20px; border-radius: 2px; background: #7d5ba6"></span><span style="width: 4px; height: 16px; border-radius: 2px; background: #7d5ba6"></span></span>
+<span style="font-weight: 700; font-size: 20px">Signify</span>
+</a>
+<nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px">
+<a href="index.html" aria-current="page" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: #7d5ba6; color: #ffffff; border: 1px solid #7d5ba6;">Home</a>
+<a href="visit.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">Translate</a>
+<a href="why.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">Why it matters</a>
+<a href="how.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">How it works</a>
+<a href="team.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">Team</a>
+</nav>
+</div>
+</header>
+<main style="max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; display: flex; flex-direction: column; gap: 32px">
+
+<section style="display: flex; flex-wrap: wrap; gap: 32px; align-items: center; background: linear-gradient(135deg, #8fd9eb, #ffc0cb); border: none; border-radius: 20px; padding: 48px">
+<div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 16px">
+<span style="font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #555">For clinics and the Deaf patients they serve</span>
+<h1 style="margin: 0; font-size: 48px; line-height: 1.05">Nobody should have to wait in a medical emergency.</h1>
+<p style="margin: 0; font-size: 18px; color: #444; max-width: 520px">Patients tap the check-in screen. The translater encodes your sign to Text To speech to communicate to your Doctor right away. <br>No more waiting for a remote interpreter for everyday questions.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px">
+<a href="visit.html" style="min-height: 48px; padding: 0 24px; border-radius: 14px; border: 1px solid #7d5ba6; background: #7d5ba6; color: #ffffff; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none">Translate Now</a>
+</div>
+<span style="font-size: 13px; color: #555">Works on the tablet you already have · nothing recorded [CONFIRM] · built at HackUMass XIV</span>
+</div>
+<div class="ph" style="flex: 1 1 360px; height: 300px; border: 1px dashed #558564; border-radius: 16px; display: flex; align-items: center; justify-content: center; text-align: center; color: #444; font-size: 14px; padding: 16px">
+<span>DEMO VIDEO, LOOPING<br>(plays continuously, muted, captioned: someone signs, captions appear)</span>
+</div>
+</section>
+
+<section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; text-align: center">
+<div><div style="font-size: 32px; font-weight: 700">[N]</div><div style="color: #444; font-size: 14px">signs recognized</div></div>
+<div><div style="font-size: 32px; font-weight: 700">[X]%</div><div style="color: #444; font-size: 14px">accuracy on test set</div></div>
+<div><div style="font-size: 32px; font-weight: 700">[&lt;X] ms</div><div style="color: #444; font-size: 14px">sign-to-caption latency</div></div>
+<div><div style="font-size: 32px; font-weight: 700">$0</div><div style="color: #444; font-size: 14px">new hardware needed</div></div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 24px">Begin Translating in Three simple steps</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px">
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 8px"><div class="ph" style="height: 120px; border: 1px dashed #558564; border-radius: 8px"></div><strong>1. Sign or tap</strong><span style="color: #444">Say why you're here, your way.</span></div>
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 8px"><div class="ph" style="height: 120px; border: 1px dashed #558564; border-radius: 8px"></div><strong>2. Check it</strong><span style="color: #444">See the English and fix anything before it's sent.</span></div>
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 8px"><div class="ph" style="height: 120px; border: 1px dashed #558564; border-radius: 8px"></div><strong>3. Be heard</strong><span style="color: #444">The desk reads it, hears it, and replies on screen.</span></div>
+</div>
+</section>
+
+<section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 32px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px">
+<div style="max-width: 640px">
+<h2 style="margin: 0; font-size: 24px">Built for clinical use, from Post to Pre medical checks. Classrooms and conversations are next.</h2>
+<p style="margin: 8px 0 0; color: #444">For Heng Zheng</p>
+</div>
+<a href="why.html" style="min-height: 48px; padding: 0 24px; border-radius: 14px; border: 1px solid #7d5ba6; background: #ffffff; color: #2f2f2f; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none">Read why it matters</a>
+</section>
+</main>
+<footer style="border-top: 1px solid #ece6f2; background: #ffffff">
+<div style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 13px; color: #555">
+<span>Signify, a hackathon project · <a href="https://github.com/Erm-Huh/Signify">GitHub</a> · [DEVPOST LINK]</span>
+<span>Brand layout v0.1</span>
+</div>
+</footer>
+</div>
+</template>
+
+<script>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+window.Component = Component;
+</script>
+</body>
+</html>
