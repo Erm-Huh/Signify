@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signify: your visit, in your own language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#">
+        <span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span>Signify</span>
+      </a>
+      <div class="topbar-right">
+        <span id="health" class="pill pill-wait" role="status">Checking model…</span>
+        <button id="settingsBtn" class="btn btn-ghost" aria-expanded="false" aria-controls="settings">Settings</button>
+        <button id="urgentBtn" class="btn btn-urgent">I need help now</button>
+      </div>
+    </div>
+    <div id="settings" class="wrap settings" hidden>
+      <label>Backend URL <input id="apiUrl" type="url" spellcheck="false"></label>
+      <label class="check"><input id="demoMode" type="checkbox"> Demo mode (canned answers, no backend)</label>
+      <button id="saveSettings" class="btn">Save</button>
+    </div>
+  </header>
+
+  <div id="urgentBanner" class="banner" role="alert" hidden>Staff have been alerted and are coming to you now.</div>
+
+  <main class="wrap">
+    <section class="intro">
+      <p class="eyebrow">● Your information is safe · Nothing is recorded</p>
+      <h1>Your visit, in your own language</h1>
+      <p class="lead">Sign one word at a time, or tap a phrase. Signify shows it in plain English and says it out loud.</p>
+    </section>
+
+    <nav class="stops" aria-label="Visit journey" id="stops"></nav>
+
+    <div class="grid">
+      <section class="col-main">
+        <div class="card">
+          <div class="talking">
+            <span class="avatar" aria-hidden="true"></span>
+            <div><span class="label">You're talking with</span><strong id="whoLabel">Front desk</strong></div>
+          </div>
+
+          <div class="camera" id="camera">
+            <video id="preview" autoplay muted playsinline></video>
+            <div class="frame-guide" aria-hidden="true"></div>
+            <div id="camMsg" class="cam-msg">Camera is off</div>
+            <div id="recBar" class="rec-bar" hidden><div id="recFill"></div></div>
+          </div>
+
+          <div class="row">
+            <button id="camBtn" class="btn">Turn on camera</button>
+            <button id="recBtn" class="btn btn-primary" disabled>Record a sign</button>
+            <label class="btn btn-ghost file-btn">Upload a clip<input id="fileInput" type="file" accept="video/*"></label>
+          </div>
+          <p class="hint">One sign per clip. Chest up, both hands in view, good light. About 3 seconds.</p>
+
+          <div id="status" class="status" role="status" aria-live="polite"></div>
+
+          <div id="result" class="result" hidden>
+            <div class="result-top">
+              <span id="resultWord" class="result-word"></span>
+              <span id="resultBadge" class="badge"></span>
+            </div>
+            <div class="meter"><div id="resultMeter"></div></div>
+            <p id="resultMeta" class="hint"></p>
+            <div id="alts" class="alts"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Your sentence</h2>
+            <span class="hint">Dashed words were unsure. Tap one to pick another guess.</span>
+          </div>
+          <div id="chips" class="chips" aria-live="polite"></div>
+          <p id="sentenceText" class="sentence">Signs you make show up here, one at a time.</p>
+          <div class="row">
+            <button id="sayBtn" class="btn btn-ok">Say it</button>
+            <button id="undoBtn" class="btn">Undo</button>
+            <button id="clearBtn" class="btn">Clear</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Or tap to say</h2>
+          <div id="phrases" class="chips"></div>
+        </div>
+      </section>
+
+      <aside class="col-side">
+        <div class="card">
+          <div class="card-head">
+            <h2>Conversation · <span id="stopName">Front desk</span></h2>
+            <button id="flipBtn" class="btn btn-ghost btn-sm" aria-pressed="false">Flip for staff</button>
+          </div>
+          <div id="thread" class="thread"><p class="hint">What you say appears here, big enough to read across the desk.</p></div>
+          <div id="replies" class="chips small"></div>
+          <form id="replyForm" class="row">
+            <label class="sr" for="replyInput">Staff reply</label>
+            <input id="replyInput" placeholder="Staff: type a reply…" autocomplete="off">
+            <button class="btn" type="submit">Send</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Your voice</h2><span class="tag">Browser voice for now</span></div>
+          <label class="field">Voice <select id="voiceSel"></select></label>
+          <label class="field">Speed <input id="rate" type="range" min="0.6" max="1.4" step="0.1" value="1"></label>
+          <label class="check"><input id="autoSpeak" type="checkbox" checked> Speak out loud when I send</label>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Signs Signify knows</h2><span id="signCount" class="tag">–</span></div>
+          <label class="sr" for="signSearch">Search signs</label>
+          <input id="signSearch" placeholder="Search, e.g. sick, water, head">
+          <div id="signList" class="sign-list"></div>
+          <p class="hint">Dot = how reliable that sign is on new signers. Pick green ones for demos.</p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Your visit so far</h2><button id="copyBtn" class="btn btn-sm">Copy summary</button></div>
+      <div id="log" class="log"><p class="hint">Everything said at each stop is kept here, so you never repeat yourself.</p></div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">Signify · HackUMass XIV · recognition by SignBridge (GestureSign model, 250 signs) · not a substitute for a certified medical interpreter</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
