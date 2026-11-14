@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Translator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Sign Translator</h1>
+
+  <p>Connection: <span id="status">disconnected</span></p>
+  <p>Raw from server: <span id="raw">-</span></p>
+  <p>Current guess: <span id="current">-</span></p>
+  <p>Progress: <span id="progress">0</span> / 5</p>
+  <p>Sentence: <span id="sentence">(empty)</span></p>
+
+  <button onclick="undo()">undo</button>
+  <button onclick="resetAll()">clear</button>
+  <button onclick="speak()">speak</button>
+
+  <script src="app.js"></script>
+</body>
+</html>
