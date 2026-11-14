@@ -1,0 +1,16 @@
+# Python 3.11. Versions are the ones the backend was tested with (macOS arm64, Apple M2).
+fastapi==0.163.0
+uvicorn[standard]==0.54.0
+python-multipart==0.0.33
+pydantic==2.14.3
+onnxruntime==1.32.0
+# 0.10.21 is the last release with the legacy `mp.solutions.holistic` graph that
+# produced the asl-signs training data (1.x removed it). It needs numpy<2.
+mediapipe==0.10.21
+numpy==1.26.4
+# mediapipe depends on opencv-contrib-python; don't also install opencv-python(-headless).
+opencv-contrib-python==4.11.0.86
+
+# tests
+pytest==9.2.0
+httpx==0.28.1
