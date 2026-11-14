@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signify: why it matters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#7d5ba6}a:hover{color:#5e4383}
+button{font:inherit;cursor:pointer}
+.ph{background-color:#e6f6fa;background-image:repeating-linear-gradient(45deg,transparent 0 10px,rgba(85,133,100,.10) 10px 11px)}
+</style>
+<script src="assets/view.js"></script>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Page markup (Rev 3 design). {{...}} values come from renderVals() below. -->
+<template id="view">
+<div style="min-height: 100vh; background: #fbf9fc; color: #2f2f2f; font-family: 'DM Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.5">
+<header style="background: rgba(255,255,255,.85); border-bottom: 1px solid #ece6f2">
+<div style="max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<a href="index.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #2f2f2f">
+<span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 14px; background: linear-gradient(135deg, #8fd9eb, #ffc0cb); display: flex; align-items: flex-end; justify-content: center; gap: 3px; padding-bottom: 7px; box-sizing: border-box"><span style="width: 4px; height: 12px; border-radius: 2px; background: #7d5ba6"></span><span style="width: 4px; height: 18px; border-radius: 2px; background: #7d5ba6"></span><span style="width: 4px; height: 20px; border-radius: 2px; background: #7d5ba6"></span><span style="width: 4px; height: 16px; border-radius: 2px; background: #7d5ba6"></span></span>
+<span style="font-weight: 700; font-size: 20px">Signify</span>
+</a>
+<nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px">
+<a href="index.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">Home</a>
+<a href="visit.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">Translate</a>
+<a href="why.html" aria-current="page" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: #7d5ba6; color: #ffffff; border: 1px solid #7d5ba6;">Why it matters</a>
+<a href="how.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">How it works</a>
+<a href="team.html" style="min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: #2f2f2f; border: 1px solid transparent;">Team</a>
+</nav>
+</div>
+</header>
+<main style="max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; display: flex; flex-direction: column; gap: 32px">
+
+<section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 40px; display: flex; flex-wrap: wrap; gap: 32px; align-items: center">
+<div style="flex: 2 1 460px; display: flex; flex-direction: column; gap: 16px">
+<span style="font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #555">Why it matters</span>
+<h1 style="margin: 0; font-size: 40px; line-height: 1.1">At the front desk, waiting for an interpreter means waiting for care.</h1>
+<p style="margin: 0; font-size: 18px; color: #444">Clinics often wait [X] minutes for a remote interpreter to connect, even for simple check-in questions. Signify handles the everyday part instantly, so certified interpreters can focus on the conversations that need them. [ADD YOUR TEAM'S STORY]</p>
+</div>
+<div class="ph" style="flex: 1 1 280px; height: 240px; border: 1px dashed #558564; border-radius: 16px; display: flex; align-items: center; justify-content: center; text-align: center; color: #444; font-size: 14px; padding: 16px">PHOTO / ILLUSTRATION<br>(a real conversation moment, with permission)</div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 36px; font-weight: 700">[STAT]</div><p style="margin: 4px 0 0; color: #444">Deaf people worldwide who use a sign language</p><span style="font-size: 12px; color: #555">Source: [CITE]</span></div>
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 36px; font-weight: 700">[STAT]</div><p style="margin: 4px 0 0; color: #444">People in the U.S. who use ASL</p><span style="font-size: 12px; color: #555">Source: [CITE]</span></div>
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 36px; font-weight: 700">[STAT]</div><p style="margin: 4px 0 0; color: #444">Interpreter shortage or average wait</p><span style="font-size: 12px; color: #555">Source: [CITE]</span></div>
+</section>
+
+<section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<h2 style="margin: 0; font-size: 24px">Same moment, two outcomes</h2>
+<div role="group" aria-label="Scenario" style="display: flex; flex-wrap: wrap; gap: 4px">
+<sc-for list="{{scenarios}}" as="sc" hint-placeholder-count="4">
+<button type="button" onClick="{{sc.pick}}" aria-pressed="{{sc.active}}" style="{{sc.style}}">{{sc.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px">
+<div style="border: 1px dashed #558564; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .06em">Today</span>
+<p style="margin: 0; font-size: 17px">{{before}}</p>
+</div>
+<div style="border: 2px solid #558564; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600; color: #2f2f2f; text-transform: uppercase; letter-spacing: .06em">With Signify</span>
+<p style="margin: 0; font-size: 17px">{{after}}</p>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-wrap: wrap; gap: 16px">
+<div style="flex: 1 1 340px; background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 20px">Who it's for</h2>
+<div style="display: flex; gap: 16px; align-items: flex-start">
+<div class="ph" style="width: 64px; height: 64px; flex: none; border: 1px dashed #558564; border-radius: 32px"></div>
+<div><strong>[PERSONA NAME], [AGE]</strong><p style="margin: 4px 0 0; color: #444">[Short profile: Deaf, uses ASL daily, what's frustrating, what they need]</p></div>
+</div>
+<ul style="margin: 0; padding-left: 20px; color: #444">
+<li>Deaf and hard-of-hearing signers</li>
+<li>Hearing people who don't know ASL: staff, teachers, coworkers</li>
+<li>ASL learners who want feedback</li>
+</ul>
+</div>
+<div style="flex: 1 1 340px; background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 20px">What we heard</h2>
+<blockquote style="margin: 0; padding: 16px; border: 1px solid #e6dff0; border-radius: 14px; font-size: 17px">“[QUOTE from a Deaf community member or ASL teacher you spoke with]”<br><span style="font-size: 13px; color: #555">— [Name / role, with permission]</span></blockquote>
+<span style="font-size: 13px; color: #555">Talking to real users is one of the strongest signals for judges.</span>
+</div>
+</section>
+
+<section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 20px">Our principles</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+<sc-for list="{{principles}}" as="p" hint-placeholder-count="4">
+<button type="button" onClick="{{p.pick}}" aria-expanded="{{p.open}}" style="text-align: left; min-height: 64px; padding: 14px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">
+<strong style="display: block">{{p.title}} {{p.sign}}</strong>
+<sc-if value="{{p.open}}" hint-placeholder-val="{{false}}"><span style="display: block; margin-top: 6px; color: #444; font-size: 14px">{{p.body}}</span></sc-if>
+</button>
+</sc-for>
+</div>
+</section>
+
+
+<section style="display: flex; flex-wrap: wrap; gap: 16px">
+<div style="flex: 1 1 340px; background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 20px">Zero new hardware</h2>
+<p style="margin: 0; color: #444">Many sign-language prototypes need sensor gloves or depth cameras nobody carries. Signify is software only. It runs on the webcam, tablet or kiosk a front desk already has.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-size: 14px">
+<div style="border: 1px dashed #558564; border-radius: 8px; padding: 10px"><strong>Gloves / sensors</strong><br><span style="color: #444">Cost, fit, hygiene, setup</span></div>
+<div style="border: 2px solid #558564; border-radius: 8px; padding: 10px"><strong>Signify</strong><br><span style="color: #444">Open a link. Done.</span></div>
+</div>
+</div>
+<div style="flex: 1 1 340px; background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 20px">For organizations</h2>
+<ul style="margin: 0; padding-left: 20px; color: #444">
+<li>Clinic and urgent-care front desks first, then pharmacies and hospital intake</li>
+<li>Embeds in an existing kiosk or check-in page</li>
+<li>[CONFIRM] Video processed in the browser, never stored, which keeps it privacy-friendly</li>
+<li>Pricing: [PER-SITE LICENSE, a fraction of on-demand interpreter costs]</li>
+</ul>
+<span style="font-size: 13px; color: #555">Market signal: established relay providers are already buying AI sign-language startups [CITE].</span>
+</div>
+</section>
+<section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 32px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px">
+<h2 style="margin: 0; font-size: 24px">See it in action.</h2>
+<div style="display: flex; gap: 12px; flex-wrap: wrap"><a href="visit.html" style="min-height: 48px; padding: 0 24px; border-radius: 14px; border: 1px solid #7d5ba6; background: #7d5ba6; color: #ffffff; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none">Try the live demo</a><a href="how.html" style="min-height: 48px; padding: 0 24px; border-radius: 14px; border: 1px solid #7d5ba6; background: #ffffff; color: #2f2f2f; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none">How it works</a></div>
+</section>
+</main>
+<footer style="border-top: 1px solid #ece6f2; background: #ffffff">
+<div style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 13px; color: #555">
+<span>Signify, a hackathon project · <a href="https://github.com/Erm-Huh/Signify">GitHub</a> · [DEVPOST LINK]</span>
+<span>Brand layout v0.1</span>
+</div>
+</footer>
+</div>
+</template>
+
+<script>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sc: 0, open: 0 }; }
+  renderVals() {
+    const s = this.state;
+    const data = [
+      ['Check-in', 'A Deaf patient writes symptoms on a clipboard while the line grows, and details get lost before triage.', 'They sign or tap at the kiosk, confirm the English, and the desk hears it and replies on screen.'],
+      ['Waiting room', 'Their name gets called out loud, and they miss it.', '[PLACEHOLDER] Their turn shows on their screen, with a gentle vibration on their phone.'],
+      ['Pharmacy pickup', 'Notes go back and forth about the dosage, and they leave unsure.', 'The question is signed, captioned and spoken, and the pharmacist\u2019s answer is shown in plain English.'],
+      ['Classroom (next)', '[PLACEHOLDER] Questions held back until after class.', '[PLACEHOLDER] Raise hand, sign it, and the room hears it.']
+    ];
+    const pr = [
+      ['Signer first', 'The signer is the speaker. Signify is just the bridge.'],
+      ['Supports interpreters', 'For check-in and everyday questions. Diagnosis, consent and complex care still call for a certified medical interpreter, and Signify can request one.'],
+      ['Private by default', '[CONFIRM] Video is processed on the device and never stored, which matters for patient privacy (HIPAA).'],
+      ['Built with the community', '[PLAN] Feedback from Deaf users shapes what we build next.']
+    ];
+    const tab = (a) => 'min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; ' + (a ? 'background: #7d5ba6; color: #ffffff; border: 1px solid #7d5ba6;' : 'background: #ffffff; color: #2f2f2f; border: 1px solid #8a7f99;');
+    return {
+      scenarios: data.map((d, i) => ({ label: d[0], active: s.sc === i, style: tab(s.sc === i), pick: () => this.setState({ sc: i }) })),
+      before: data[s.sc][1], after: data[s.sc][2],
+      principles: pr.map((p, i) => ({ title: p[0], body: p[1], open: s.open === i, sign: s.open === i ? '−' : '+', pick: () => this.setState({ open: s.open === i ? -1 : i }) }))
+    };
+  }
+}
+window.Component = Component;
+</script>
+</body>
+</html>
