@@ -5,3 +5,6 @@ __pycache__/
 .DS_Store
 models/*.part
 third_party/
+
+# secrets (ElevenLabs API key etc.)
+.env

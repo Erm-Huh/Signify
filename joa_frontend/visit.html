@@ -10,6 +10,11 @@
 body{margin:0}
 a{color:#7d5ba6}a:hover{color:#5e4383}
 button{font:inherit;cursor:pointer}
+button,a[style*="border-radius"]{transition:transform .28s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease;will-change:transform}
+button:hover,a[style*="border-radius"]:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 8px 16px rgba(125,91,166,.22)}
+button:active,a[style*="border-radius"]:active{transform:translateY(1px) scale(.93);box-shadow:0 1px 3px rgba(125,91,166,.2);transition-duration:.08s}
+button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){button,a[style*="border-radius"]{transition:none}button:hover,button:active,a[style*="border-radius"]:hover,a[style*="border-radius"]:active{transform:none}}
 .ph{background-color:#e6f6fa;background-image:repeating-linear-gradient(45deg,transparent 0 10px,rgba(85,133,100,.10) 10px 11px)}
 </style>
 <script src="assets/view.js"></script>
@@ -17,7 +22,7 @@ button{font:inherit;cursor:pointer}
 <body>
 <div id="app"></div>
 
-<!-- Page markup (Rev 3 design). {{...}} values come from renderVals() below. -->
+<!-- Page markup (Rev 3 design, wireframe V4). {{...}} values come from renderVals() below. -->
 <template id="view">
 <div style="min-height: 100vh; background: #fbf9fc; color: #2f2f2f; font-family: 'DM Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.5">
 <header style="background: rgba(255,255,255,.85); border-bottom: 1px solid #ece6f2">
@@ -43,33 +48,35 @@ button{font:inherit;cursor:pointer}
 <h1 style="margin: 6px 0 0; font-size: 36px; font-weight: 600">Your visit, in your own language</h1>
 <p style="margin: 4px 0 0; color: #444; max-width: 680px">From the front desk to the nurse to checkout, one screen goes with you. Sign or tap, and everyone you meet reads and hears you.</p>
 </div>
-<button type="button" onClick="{{toggleUrgent}}" aria-pressed="{{urgent}}" style="{{urgentStyle}}">{{urgentLabel}}</button>
+
 </div>
 
 <div style="display: contents"><sc-if value="{{urgent}}" hint-placeholder-val="{{false}}">
 <div role="alert" style="background: #ffc0cb; color: #2f2f2f; border-radius: 16px; padding: 16px 20px; font-size: 18px; font-weight: 600">Staff have been alerted and are coming to you now.</div>
 </sc-if></div>
 
-<nav aria-label="Visit journey" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px">
-<sc-for list="{{stops}}" as="st" hint-placeholder-count="5">
-<button type="button" onClick="{{st.pick}}" aria-current="{{st.current}}" style="{{st.style}}">
-<span style="display: block; font-size: 12px; opacity: .85">{{st.state}}</span>
-<span style="display: block; font-size: 16px; font-weight: 700">{{st.label}}</span>
-<span style="display: block; font-size: 12px; opacity: .85">{{st.who}}</span>
-</button>
-</sc-for>
-</nav>
-
 <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
 
-<section aria-label="You" style="flex: 3 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<section aria-label="You" style="flex: 5 1 720px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
 
 <div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #e9f8fc, #fff0f3)">
 <div style="display: flex; align-items: center; gap: 12px">
 <span class="ph" aria-hidden="true" style="width: 48px; height: 48px; border-radius: 24px; flex: none"></span>
-<div><span style="display: block; font-size: 12px; font-weight: 600; color: #444">YOU'RE TALKING WITH</span><strong style="font-size: 20px">{{whoLabel}}</strong></div>
+<div><span style="display: block; font-size: 12px; font-weight: 600; color: #444">YOU'RE TALKING WITH</span><strong style="font-size: 20px">{{whoLabel}}</strong>
+<sc-if value="{{nameCaught}}" hint-placeholder-val="{{false}}"><span style="display: block; margin-top: 4px; font-size: 12px; font-weight: 600; color: #2f2f2f">✓ Name caught from what they said</span></sc-if>
+<sc-if value="{{nameMissing}}" hint-placeholder-val="{{true}}"><span style="display: block; margin-top: 4px; font-size: 12px; color: #444">Name not caught yet. It shows here when they introduce themselves.</span></sc-if></div>
 </div>
-<span style="font-size: 14px; color: #444; max-width: 340px">{{stopHint}}</span>
+<div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 340px">
+<span style="font-size: 14px; color: #444">{{stopHint}}</span>
+<button type="button" onClick="{{startEdit}}" style="min-height: 40px; padding: 0 14px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; font-size: 13px; color: #2f2f2f">Fix name</button>
+<sc-if value="{{editing}}" hint-placeholder-val="{{false}}">
+<form onSubmit="{{saveName}}" style="display: flex; gap: 8px; align-items: center">
+<label for="nameFix" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Their name</label>
+<input id="nameFix" value="{{nameDraft}}" onChange="{{onNameDraft}}" placeholder="e.g. Dr. Patel" style="min-width: 0; min-height: 40px; border: 1px solid #8a7f99; border-radius: 14px; padding: 0 12px; font: inherit">
+<button type="submit" style="min-height: 40px; padding: 0 14px; border-radius: 14px; border: 1px solid #2f2f2f; background: #2f2f2f; color: #ffffff; font-weight: 600">Save</button>
+</form>
+</sc-if>
+</div>
 </div>
 
 <div style="display: contents"><sc-if value="{{isWaiting}}" hint-placeholder-val="{{false}}">
@@ -89,7 +96,7 @@ button{font:inherit;cursor:pointer}
 </div>
 </sc-if></div>
 
-<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 20px; display: flex; flex-direction: column; gap: 14px">
 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between">
 <span role="status" style="{{healthStyle}}">{{healthLabel}}</span>
 <button type="button" onClick="{{toggleSettings}}" aria-expanded="{{settingsExpanded}}" style="min-height: 40px; padding: 0 12px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; font-size: 13px; color: #2f2f2f">Settings</button>
@@ -97,16 +104,16 @@ button{font:inherit;cursor:pointer}
 <div style="display: contents"><sc-if value="{{settingsOpen}}">
 <form onSubmit="{{saveSettings}}" style="background: #f3eefa; border-radius: 16px; padding: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end">
 <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; flex: 1 1 240px">Backend URL<input type="url" value="{{apiDraft}}" onChange="{{onApiDraft}}" spellcheck="false" style="min-height: 44px; border: 1px solid #8a7f99; border-radius: 14px; padding: 0 12px; font: inherit; font-weight: 400"></label>
-<label style="display: flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px"><input type="checkbox" checked="{{demoDraft}}" onChange="{{toggleDemoDraft}}" style="width: 20px; height: 20px; accent-color: #7d5ba6"> Demo mode (simulated signs, no backend)</label>
+<label style="display: flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px"><input type="checkbox" checked="{{demoDraft}}" onChange="{{toggleDemoDraft}}" style="width: 20px; height: 20px; accent-color: #7d5ba6"> Demo mode (simulated signs and speech, no backend)</label>
 <button type="submit" style="min-height: 44px; padding: 0 18px; border-radius: 14px; border: none; background: #7d5ba6; color: #ffffff; font-weight: 700">Save</button>
 </form>
 </sc-if></div>
 <div class="ph" style="{{camStyle}}">
 <video id="preview" autoplay muted playsinline aria-label="Your camera" style="{{videoStyle}}"></video>
-<sc-if value="{{camPrompt}}"><div style="position: relative; text-align: center; color: #444; font-size: 14px; padding: 16px; max-width: 360px">{{camPromptText}}</div></sc-if>
+<sc-if value="{{camPrompt}}"><div style="position: relative; text-align: center; color: #444; font-size: 18px; font-weight: 600; padding: 16px; max-width: 420px">{{camPromptText}}</div></sc-if>
 <sc-if value="{{showOverlay}}" hint-placeholder-val="{{false}}">
 <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; background: rgba(255,255,255,.95); border-radius: 16px; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 8px 24px rgba(47,47,47,.12)">
-<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 44px; font-weight: 700; color: #7d5ba6; line-height: 1">{{liveWord}}</span><span style="font-size: 13px; color: #444">{{holdLabel}}</span></div>
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 64px; font-weight: 700; color: #7d5ba6; line-height: 1">{{liveWord}}</span><span style="font-size: 13px; color: #444">{{holdLabel}}</span></div>
 <div style="height: 8px; background: #ece6f2; border-radius: 4px; overflow: hidden"><div style="{{holdStyle}}"></div></div>
 </div>
 </sc-if>
@@ -131,12 +138,11 @@ button{font:inherit;cursor:pointer}
 </div>
 </sc-if></div>
 <sc-if value="{{hasDraft}}" hint-placeholder-val="{{false}}">
-<div style="background: #f3eefa; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
-<span style="font-size: 12px; font-weight: 600; color: #444">IS THIS RIGHT?</span>
+<div style="background: #f3eefa; border-radius: 16px; padding: 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between">
 <div style="font-size: 28px; font-weight: 600; line-height: 1.25">{{draftEnglish}}</div>
 <div style="display: flex; flex-wrap: wrap; gap: 8px">
-<button type="button" onClick="{{sendSigned}}" style="min-height: 52px; padding: 0 24px; border-radius: 14px; border: none; background: #558564; color: #ffffff; font-weight: 700; font-size: 17px">Yes, say it</button>
-<button type="button" onClick="{{undo}}" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">Undo last sign</button>
+<sc-if value="{{isLive}}"><button type="button" onClick="{{sendSigned}}" style="min-height: 48px; padding: 0 22px; border-radius: 14px; border: none; background: #558564; color: #ffffff; font-weight: 700; font-size: 16px">Say it</button>
+<button type="button" onClick="{{undo}}" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">Undo</button></sc-if>
 <button type="button" onClick="{{clearSigns}}" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">Start over</button>
 </div>
 </div>
@@ -160,7 +166,7 @@ button{font:inherit;cursor:pointer}
 </div>
 </section>
 
-<aside style="flex: 2 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<aside style="flex: 2 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
 <div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px; display: flex; flex-direction: column; gap: 10px">
 <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
 <h2 style="margin: 0; font-size: 17px; font-weight: 600">Conversation · {{stopName}}</h2>
@@ -172,16 +178,14 @@ button{font:inherit;cursor:pointer}
 <div style="{{m.style}}"><span style="display: block; font-size: 12px; font-weight: 600; opacity: .8">{{m.who}}</span>{{m.text}}</div>
 </sc-for>
 </div>
-<span style="font-size: 13px; font-weight: 600; color: #444">{{staffTitle}}: quick replies</span>
-<div style="display: flex; flex-wrap: wrap; gap: 6px">
-<sc-for list="{{replies}}" as="r" hint-placeholder-count="3"><button type="button" onClick="{{r.send}}" style="min-height: 40px; padding: 0 12px; border-radius: 20px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f; font-size: 14px">{{r.label}}</button></sc-for>
+<div style="background: #fff0f3; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px">
+<div><span style="display: block; font-size: 12px; font-weight: 600; color: #444">FOR THE SPEAKER</span><strong style="font-size: 16px">Talk to the patient</strong></div>
+<button type="button" onClick="{{toggleListen}}" aria-pressed="{{listening}}" style="{{listenStyle}}">{{listenLabel}}</button>
 </div>
-<form onSubmit="{{reply}}" style="display: flex; gap: 8px">
-<label for="staffReply" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Staff reply</label>
-<input id="staffReply" value="{{draft}}" onChange="{{onDraft}}" placeholder="Staff: type or tap mic…" style="flex: 1; min-width: 0; min-height: 44px; border: 1px solid #8a7f99; border-radius: 14px; padding: 0 12px; font: inherit">
-<button type="submit" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">Send</button>
-<button type="button" onClick="{{listen}}" aria-pressed="{{listeningStr}}" aria-label="Speak a reply (speech to text)" style="{{micStyle}}">{{micLabel}}</button>
-</form>
+<sc-if value="{{listening}}" hint-placeholder-val="{{false}}"><div role="status" aria-live="polite" style="font-size: 26px; font-weight: 600; line-height: 1.25; background: #ffffff; border-radius: 12px; padding: 12px; min-height: 40px">{{heard}}</div></sc-if>
+<span style="font-size: 13px; color: #444">{{listenHint}}</span>
+</div>
 </div>
 
 <div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px; display: flex; flex-direction: column; gap: 10px">
@@ -231,7 +235,8 @@ button{font:inherit;cursor:pointer}
 
 <script>
 // Live mode talks to the SignBridge backend (water_backend/): record ~3 s or upload a clip -> POST /predict.
-// Demo mode keeps the original Rev 3 simulation (no backend needed).
+// Speech uses the browser for now (speechSynthesis + SpeechRecognition); ElevenLabs will replace say() and listen*().
+// Demo mode keeps the original canvas simulation (no backend, sample speech).
 const DEFAULT_API = 'http://localhost:8000';
 const RECORD_MS = 3000;
 const ERRORS = {
@@ -251,6 +256,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 };
 const pct = (x) => Math.round((x || 0) * 100) + '%';
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 class Component extends DCLogic {
   constructor(props) {
@@ -278,15 +284,15 @@ class Component extends DCLogic {
         replies: ['Twice a day with food', 'Your follow-up is in 2 weeks', 'Here is your printed summary'], auto: 'Twice a day with food. I’ll print it for you.' }
     ];
     this.state = { stop: 0, visited: [0], running: false, chips: [], hold: 0, flash: false, urgent: false, interp: false,
-      threads: [[], [], [], [], []], voice: 0, speed: 3, vol: 4, auto: true, saying: '', flipped: false, draft: '', copied: false, queue: 2,
+      threads: [[], [], [], [], []], voice: 0, speed: 3, vol: 4, auto: true, saying: '', flipped: false, draft: '', copied: false, queue: 2, listening: false, heard: '', lines: 0, names: {}, editing: false, nameDraft: '',
       api: store.get('signify.api') || DEFAULT_API, demo: store.get('signify.demo') === '1', health: 'wait',
       settingsOpen: false, apiDraft: '', demoDraft: false,
-      camOn: false, recording: false, recPct: 0, busy: false, last: null, status: null, picking: null, listening: false };
-    this.timer = null; this.sayT = null; this.replyT = null; this.sayId = 0;
+      camOn: false, recording: false, recPct: 0, busy: false, last: null, status: null, picking: null, listenError: '' };
+    this.timer = null; this.sayT = null; this.replyT = null; this.listenT = null; this.sayId = 0;
     this.stream = null; this.recorder = null; this.recT = null; this.rec = null;
   }
   componentDidMount() { this.checkHealth(); if (window.speechSynthesis) speechSynthesis.getVoices(); }
-  componentWillUnmount() { this.stop(); this.camOff(); [this.sayT, this.replyT].forEach((t) => t && clearTimeout(t)); }
+  componentWillUnmount() { this.stop(); this.camOff(); this.stopListening(); [this.sayT, this.replyT].forEach((t) => t && clearTimeout(t)); if (this.listenT) clearInterval(this.listenT); }
   // view.js re-renders by patching; make sure the <video> always shows the live camera stream.
   _render() {
     super._render();
@@ -294,6 +300,57 @@ class Component extends DCLogic {
     if (!v) return;
     if (this.stream && v.srcObject !== this.stream) { v.muted = true; v.srcObject = this.stream; v.play().catch(() => {}); }
     else if (!this.stream && v.srcObject) v.srcObject = null;
+  }
+
+  /* ---------- speaker speech to text ---------- */
+  toggleListen() { if (this.state.demo) this.toggleListenDemo(); else this.toggleListenLive(); }
+  stopListening() { if (this.rec) { this.rec.onend = null; try { this.rec.abort(); } catch (e) {} this.rec = null; } }
+  toggleListenLive() {
+    if (!SR) { this.setState({ listenError: 'Speech to text isn’t supported in this browser (try Chrome or Edge), or turn on Demo mode.' }); return; }
+    if (this.rec) { this.rec.stop(); return; }                 // second tap: finish and keep what was heard
+    const r = new SR();
+    r.lang = 'en-US'; r.interimResults = true; r.continuous = true;
+    let finalText = '';
+    r.onresult = (e) => {
+      let interim = ''; finalText = '';
+      for (let k = 0; k < e.results.length; k++) { const t = e.results[k][0].transcript; if (e.results[k].isFinal) finalText += t; else interim += t; }
+      this.setState({ heard: (finalText + interim).trim() });
+    };
+    r.onerror = (e) => {
+      const msg = e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Microphone blocked. Allow mic access to use Tap to speak.'
+        : e.error === 'no-speech' ? 'Didn’t hear anything. Tap and try again.' : e.error === 'network' ? 'Speech to text needs an internet connection.' : '';
+      if (msg) this.setState({ listenError: msg });
+    };
+    r.onend = () => {
+      this.rec = null;
+      const text = (this.state.heard || finalText).trim();
+      if (text) { const said = text.charAt(0).toUpperCase() + text.slice(1); this.push('Speaker', said, false); this.detect(said); }
+      this.setState({ listening: false, heard: '', lines: this.state.lines + (text ? 1 : 0) });
+    };
+    this.rec = r;
+    try { r.start(); this.setState({ listening: true, heard: '', listenError: '' }); }
+    catch (e) { this.rec = null; this.setState({ listenError: 'Couldn’t start the microphone. Try again.' }); }
+  }
+  toggleListenDemo() {
+    if (this.listenT) { clearInterval(this.listenT); this.listenT = null; this.setState({ listening: false, heard: '' }); return; }
+    const samples = ['Hi, I’m Dr. Patel. I’ll be taking care of you today.', 'Can you tell me where it hurts?', 'Do you have any allergies to medicine?', 'I am going to check your blood pressure now.', 'The doctor will see you in a few minutes.'];
+    const text = samples[this.state.lines % samples.length]; const words = text.split(' '); let i = 0;
+    this.setState({ listening: true, heard: '' });
+    this.listenT = setInterval(() => {
+      i++; this.setState({ heard: words.slice(0, i).join(' ') });
+      if (i >= words.length) {
+        clearInterval(this.listenT); this.listenT = null;
+        this.push('Speaker', text, false); this.detect(text);
+        this.setState({ listening: false, heard: '', lines: this.state.lines + 1 });
+      }
+    }, 380);
+  }
+  detect(text) {
+    const m = text.match(/\b(?:I['’]m|I am|my name is|this is)\s+(?:(Dr\.?|Doctor|Nurse|RN)\s+)?([A-Z][a-z'’-]+(?:\s+[A-Z][a-z'’-]+)?)/);
+    if (!m) return;
+    const title = m[1] ? (/^d/i.test(m[1]) ? 'Dr.' : (m[1] === 'RN' ? 'RN' : 'Nurse')) : '';
+    const id = this.stops[this.state.stop].id; const next = Object.assign({}, this.state.names); next[id] = (title ? title + ' ' : '') + m[2];
+    this.setState({ names: next });
   }
   stop() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
 
@@ -309,25 +366,12 @@ class Component extends DCLogic {
     const u = new SpeechSynthesisUtterance(t);
     const en = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
     if (en.length) u.voice = en.find((v) => v.default) || en[0];
-    u.pitch = [1, 1.25, 0.8][this.state.voice];          // Warm / Bright / Deep
+    u.pitch = [1, 1.25, 0.8][this.state.voice];            // Warm / Bright / Deep
     u.rate = [0.7, 0.85, 1, 1.2, 1.4][this.state.speed - 1];
     u.volume = [0.2, 0.4, 0.6, 0.8, 1][this.state.vol - 1];
     u.onend = done; u.onerror = done;
     speechSynthesis.speak(u);
-    this.sayT = setTimeout(done, 20000);                   // safety net if onend never fires
-  }
-
-  /* ---------- staff reply by voice (speech to text) ---------- */
-  listen() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { this.setState({ status: { text: 'Speech to text isn’t supported in this browser. Type the reply instead.', kind: 'error' } }); return; }
-    if (this.rec) { this.rec.stop(); return; }
-    const r = new SR();
-    r.lang = 'en-US'; r.interimResults = true;
-    r.onresult = (e) => this.setState({ draft: Array.from(e.results).map((x) => x[0].transcript).join('') });
-    r.onend = () => { this.rec = null; this.setState({ listening: false }); };
-    r.onerror = () => {};
-    this.rec = r; r.start(); this.setState({ listening: true });
+    this.sayT = setTimeout(done, 20000);                     // safety net if onend never fires
   }
 
   /* ---------- backend ---------- */
@@ -414,21 +458,28 @@ class Component extends DCLogic {
   patientSays(text) {
     const at = this.state.stop; const s = this.stops[at];
     this.push('You', text, true); this.say(text);
-    if (!this.state.demo) return;                           // live mode: real staff reply via the box, quick replies or mic
     if (this.replyT) clearTimeout(this.replyT);
-    this.replyT = setTimeout(() => { if (this.state.stop === at) this.push(s.who, s.auto, false); }, 1600);
   }
   tick() {
     const g = this.stops[this.state.stop].gloss; const n = this.state.chips.length;
     if (n >= g.length) { this.stop(); this.setState({ running: false }); return; }
     const h = this.state.hold + 25;
     if (h < 100) { this.setState({ hold: h }); return; }
-    this.setState({ chips: this.state.chips.concat({ word: g[n], alt: this.stops[this.state.stop].alts[n], unsure: n === g.length - 1 && g.length > 2 }), hold: 0, flash: true });
+    const st = this.stops[this.state.stop];
+    const chips = this.state.chips.concat({ word: g[n], alt: st.alts[n], unsure: false });
+    if (chips.length >= g.length) {
+      const w = chips.map((c) => c.word).join(' ');
+      const text = w === g.join(' ') ? st.english : w.charAt(0) + w.slice(1).toLowerCase() + '.';
+      this.stop(); this.setState({ chips: [], hold: 0, flash: true, running: false });
+      this.patientSays(text);
+    } else {
+      this.setState({ chips: chips, hold: 0, flash: true });
+    }
     setTimeout(() => this.setState({ flash: false }), 300);
   }
   go(i) { this.stop(); const v = this.state.visited.indexOf(i) > -1 ? this.state.visited : this.state.visited.concat(i); this.setState({ stop: i, visited: v, chips: [], running: false, hold: 0, last: null, picking: null, status: null }); }
   renderVals() {
-    const s = this.state; const st = this.stops[s.stop];
+    const s = this.state; const st = this.stops[s.stop]; const nameFor = s.names[st.id];
     const LIL = '#7d5ba6', TEAL = '#558564', PINK = '#ffc0cb', BLUE = '#8fd9eb', GR = '#2f2f2f';
     const n = s.chips.length; const done = n >= st.gloss.length;
     const words = s.chips.map((c) => c.word).join(' ');
@@ -453,7 +504,11 @@ class Component extends DCLogic {
       urgent: s.urgent, toggleUrgent: () => this.setState({ urgent: !s.urgent }),
       urgentLabel: s.urgent ? 'Cancel alert' : 'I need help now',
       urgentStyle: 'min-height: 52px; padding: 0 22px; border-radius: 16px; font-weight: 700; font-size: 16px; ' + (s.urgent ? 'background: #ffffff; color: ' + GR + '; border: 2px solid ' + GR + ';' : 'background: ' + PINK + '; color: ' + GR + '; border: 2px solid ' + PINK + ';'),
-      whoLabel: st.name, whoShort: st.who.toLowerCase(), stopHint: st.hint, stopName: st.label, staffTitle: st.who,
+      whoLabel: nameFor ? nameFor + ' · ' + st.who : st.name,
+      nameCaught: !!nameFor, nameMissing: !nameFor, editing: s.editing, nameDraft: s.nameDraft,
+      startEdit: () => this.setState({ editing: !s.editing, nameDraft: nameFor || '' }),
+      onNameDraft: (e) => this.setState({ nameDraft: e.target.value }),
+      saveName: (e) => { e.preventDefault(); const v = s.nameDraft.trim(); const next = Object.assign({}, s.names); if (v) next[st.id] = v; else delete next[st.id]; this.setState({ names: next, editing: false }); }, whoShort: st.who.toLowerCase(), stopHint: st.hint, stopName: st.label, staffTitle: st.who,
       isWaiting: st.id === 'wait', isDoctor: st.id === 'doctor', showPain: st.id === 'nurse' || st.id === 'desk',
       queuePos: s.queue === 0 ? 'Now' : '#' + s.queue, queueMin: s.queue * 5,
       callMe: () => { this.setState({ queue: 0 }); this.push('Nurse', 'We’re ready for you. Please come to room 3.', false); setTimeout(() => this.go(2), 1800); },
@@ -469,15 +524,18 @@ class Component extends DCLogic {
       saveSettings: (e) => {
         e.preventDefault();
         const api = (s.apiDraft || '').trim().replace(/\/+$/, '') || DEFAULT_API;
-        if (s.demoDraft) this.camOff(); else { this.stop(); }
-        this.setState({ api: api, demo: s.demoDraft, settingsOpen: false, chips: [], running: false, hold: 0, last: null, picking: null, status: null });
+        this.stop(); this.stopListening();
+        if (this.listenT) { clearInterval(this.listenT); this.listenT = null; }
+        if (s.demoDraft) this.camOff();
+        this.setState({ api: api, demo: s.demoDraft, settingsOpen: false, chips: [], running: false, hold: 0, last: null, picking: null, status: null,
+          listening: false, heard: '', listenError: '' });
         store.set('signify.api', api); store.set('signify.demo', s.demoDraft ? '1' : '0');
         this.checkHealth();
       },
-      camStyle: 'position: relative; overflow: hidden; height: 300px; border-radius: 16px; display: flex; align-items: center; justify-content: center; ' + (s.flash ? 'border: 5px solid ' + TEAL + ';' : 'border: 1px solid #ece6f2;'),
+      camStyle: 'position: relative; overflow: hidden; height: 560px; max-height: 70vh; min-height: 360px; border-radius: 16px; display: flex; align-items: center; justify-content: center; ' + (s.flash ? 'border: 5px solid ' + TEAL + ';' : 'border: 1px solid #ece6f2;'),
       videoStyle: 'position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); ' + (live && s.camOn ? '' : 'display: none;'),
       camPrompt: !(live && s.camOn),
-      camPromptText: live ? 'Turn on the camera, or upload a clip. Keep your chest and both hands in view.' : 'Demo mode: signs are simulated. Press “Start signing”.',
+      camPromptText: live ? 'Turn on the camera, or upload a clip. Keep your chest and both hands in view.' : 'CAMERA + soft hand-landmark overlay (demo: signs are simulated)',
       showOverlay: live ? (s.recording || s.busy || !!s.last) : s.running,
       liveWord: live ? (s.recording ? 'Sign now' : s.busy ? 'Reading…' : s.last ? (s.last.confident ? s.last.word : 'Not sure') : '')
         : (done ? 'Got it' : st.gloss[Math.min(n, st.gloss.length - 1)]),
@@ -490,7 +548,7 @@ class Component extends DCLogic {
       record: () => this.record(), recDisabled: !s.camOn || s.busy, recLabel: s.recording ? 'Stop' : 'Record a sign',
       recStyle: s.recording ? 'min-height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 700; background: #ffc0cb; color: ' + GR + '; border: 1px solid #ffc0cb;' : btn(s.camOn, !s.camOn || s.busy),
       onFile: (e) => { const f = e.target.files && e.target.files[0]; if (f) this.predict(f, f.name); e.target.value = ''; },
-      signHint: live ? 'One sign per clip, about 3 seconds. Tap a word to fix it.' : 'Every sign is kept the moment you make it. Tap a dashed one to fix it.',
+      signHint: live ? 'One sign per clip, about 3 seconds. Then press “Say it”.' : 'Just sign. It speaks out loud the moment you finish.',
       statusText: s.status ? s.status.text : '',
       statusStyle: !s.status ? 'min-height: 0' : s.status.kind === 'error'
         ? 'color: #8a2a3a; background: #fff0f3; padding: 10px 14px; border-radius: 14px; font-weight: 600; font-size: 15px'
@@ -498,8 +556,6 @@ class Component extends DCLogic {
       picking: !!(pickChip && pickChip.alts && pickChip.alts.length),
       altChoices: pickChip && pickChip.alts ? pickChip.alts.map((a) => ({ label: a.label.toUpperCase() + ' · ' + pct(a.confidence),
         pick: () => { const cs = s.chips.slice(); cs[s.picking] = Object.assign({}, pickChip, { word: a.label.toUpperCase(), unsure: false, conf: a.confidence }); this.setState({ chips: cs, picking: null, status: null }); } })) : [],
-      listen: () => this.listen(), listeningStr: s.listening ? 'true' : 'false', micLabel: s.listening ? 'Stop' : 'Mic',
-      micStyle: 'min-height: 44px; padding: 0 16px; border-radius: 14px; ' + (s.listening ? 'border: 1px solid ' + LIL + '; background: ' + LIL + '; color: #ffffff;' : 'border: 1px solid #8a7f99; background: #ffffff; color: ' + GR + ';'),
       toggleRun: () => { if (s.running) { this.stop(); this.setState({ running: false }); } else { if (done) this.setState({ chips: [] }); this.setState({ running: true }); this.timer = setInterval(() => this.tick(), 200); } },
       runLabel: s.running ? 'Pause' : (done ? 'Sign something else' : (n ? 'Keep signing' : 'Start signing')),
       runStyle: 'min-height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 600; ' + (s.running ? 'background: #ffffff; color: ' + LIL + '; border: 1px solid ' + LIL + ';' : 'background: ' + LIL + '; color: #ffffff; border: 1px solid ' + LIL + ';'),
@@ -528,9 +584,15 @@ class Component extends DCLogic {
       vol: s.vol, setVol: (e) => this.setState({ vol: Number(e.target.value) }), volLabel: vl[s.vol - 1],
       autoSpeak: s.auto, toggleAuto: () => this.setState({ auto: !s.auto }),
       speaking: !!s.saying, nowSaying: s.saying,
+      listening: s.listening, heard: s.heard, toggleListen: () => this.toggleListen(),
+      listenLabel: s.listening ? 'Stop listening' : 'Tap to speak',
+      listenHint: s.listenError ? s.listenError : live
+        ? 'Tap, then speak. Tap again when done. Your words show up as large text for the patient.'
+        : 'Tap, then speak. Your words show up as large text for the patient. [DEMO: plays sample speech]',
+      listenStyle: 'min-height: 48px; padding: 0 20px; border-radius: 24px; font-weight: 700; ' + (s.listening ? 'background: #ffffff; color: ' + GR + '; border: 2px solid ' + GR + ';' : 'background: ' + GR + '; color: #ffffff; border: 2px solid ' + GR + ';'),
       log: log, noLog: log.length === 0,
       copyLabel: s.copied ? 'Copied ✓' : 'Copy visit summary',
-      copySummary: () => { const t = log.map((g) => g.stop + '\n' + g.lines.map((l) => l.who + ': ' + l.text).join('\n')).join('\n\n');
+      copySummary: () => { const t = (nameFor ? 'Talking with: ' + nameFor + ' (' + st.who + ')\n\n' : '') + log.map((g) => g.stop + '\n' + g.lines.map((l) => l.who + ': ' + l.text).join('\n')).join('\n\n');
         try { if (navigator.clipboard) navigator.clipboard.writeText(t).catch(() => {}); } catch (e) {} this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1500); }
     };
   }
