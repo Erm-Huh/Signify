@@ -23,6 +23,18 @@ FILES = {
 }
 MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
 
+# ASL alphabet (A-Z) model. Code MIT; weights derive from GPL-2.0 / CC0 datasets
+# (see models/alphabet/ATTRIBUTION.md).
+ALPHA_COMMIT = "45ff2c0e26925c50f4546073bd573fe3ca7a5e6e"
+ALPHA_BASE = (
+    "https://raw.githubusercontent.com/punpuniacitizen/"
+    f"MediaPipe-ASL-sign-language-recognition/{ALPHA_COMMIT}"
+)
+ALPHA_FILES = {
+    "asl_cnn_model.onnx": "c3843cabc57032080a81e5995b578139c90631080af1e6d070df1c6dfdc1172b",
+    "class_names.txt": "9bcf92a12d8469d0b9b9a8a493e639b51fe3a8b46e05f776ef34cddf5b945847",
+}
+
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -33,14 +45,17 @@ def main() -> int:
     parser.add_argument("--force", action="store_true", help="re-download even if present")
     args = parser.parse_args()
     MODEL_DIR.mkdir(exist_ok=True)
-    for name, digest in FILES.items():
-        dest = MODEL_DIR / name
+    (MODEL_DIR / "alphabet").mkdir(exist_ok=True)
+    jobs = [(f"{BASE}/{n}", MODEL_DIR / n, d) for n, d in FILES.items()]
+    jobs += [(f"{ALPHA_BASE}/{n}", MODEL_DIR / "alphabet" / n, d) for n, d in ALPHA_FILES.items()]
+    for url, dest, digest in jobs:
+        name = str(dest.relative_to(MODEL_DIR))
         if dest.exists() and not args.force and sha256(dest) == digest:
             print(f"ok       {name}")
             continue
         print(f"download {name}")
         tmp = dest.with_suffix(dest.suffix + ".part")
-        urllib.request.urlretrieve(f"{BASE}/{name}", tmp)
+        urllib.request.urlretrieve(url, tmp)
         if sha256(tmp) != digest:
             tmp.unlink()
             print(f"error: checksum mismatch for {name}", file=sys.stderr)

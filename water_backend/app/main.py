@@ -23,7 +23,10 @@ from app.config import settings
 from app.model import SignRecognizer
 from app.preprocessing import VideoError, check_extension, preprocess_video
 from app.schemas import (
+    AlphabetLabelsResponse,
+    AlphabetPredictResponse,
     ErrorResponse,
+    LetterPrediction,
     HealthResponse,
     LabelItem,
     LabelsResponse,
@@ -38,7 +41,9 @@ logging.basicConfig(
 )
 log = logging.getLogger("signbridge")
 
-_state: dict[str, object] = {"recognizer": None, "error": None}
+_state: dict[str, object] = {"recognizer": None, "error": None, "alphabet": None, "alphabet_error": None}
+ALPHABET_MODEL_NAME = "MediaPipe-ASL alphabet CNN (A-Z)"
+IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".bmp", ".webp"})
 _slots = threading.BoundedSemaphore(settings.max_concurrent_inference)
 _CHUNK = 1 << 20
 
@@ -52,6 +57,13 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     except Exception as exc:  # keep serving /health so the failure is visible
         log.exception("Model failed to load")
         _state["error"] = f"{type(exc).__name__}: {exc}"
+    try:  # independent: a broken alphabet model must not take down /predict
+        from app.models.alphabet_recognizer import AlphabetModel
+
+        _state["alphabet"] = AlphabetModel(settings.model_dir / "alphabet")
+    except Exception as exc:
+        log.exception("Alphabet model failed to load")
+        _state["alphabet_error"] = f"{type(exc).__name__}: {exc}"
     yield
 
 
@@ -87,6 +99,11 @@ def _recognizer() -> SignRecognizer:
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     rec = _state["recognizer"]
+    alpha = {
+        "alphabet_model_loaded": _state["alphabet"] is not None,
+        "alphabet_model_name": ALPHABET_MODEL_NAME,
+        "alphabet_error": _state["alphabet_error"],
+    }
     if isinstance(rec, SignRecognizer):
         return HealthResponse(
             status="ok",
@@ -94,12 +111,14 @@ def health() -> HealthResponse:
             model_name=settings.model_name,
             model_version=rec.version,
             device=rec.device,
+            **alpha,
         )
     return HealthResponse(
         status="degraded",
         model_loaded=False,
         model_name=settings.model_name,
         error=str(_state["error"]),
+        **alpha,
     )
 
 
@@ -188,3 +207,105 @@ def predict(file: UploadFile = File(..., description="Video of ONE ASL sign (mp4
         video=prepared.stats,
         warnings=prepared.warnings,
     )
+
+
+# ----------------------------------------------------------------------------- alphabet
+
+
+def _alphabet():  # noqa: ANN202
+    model = _state["alphabet"]
+    if model is None:
+        raise VideoError("model_unavailable", f"Alphabet model not loaded: {_state['alphabet_error']}", 503)
+    return model
+
+
+@app.get("/labels/alphabet", response_model=AlphabetLabelsResponse)
+def alphabet_labels() -> AlphabetLabelsResponse:
+    names = [c.upper() for c in _alphabet().class_names]
+    return AlphabetLabelsResponse(count=len(names), labels=names)
+
+
+@app.post(
+    "/predict/alphabet",
+    response_model=AlphabetPredictResponse,
+    responses={400: {"model": ErrorResponse}, 413: {"model": ErrorResponse},
+               415: {"model": ErrorResponse}, 422: {"model": ErrorResponse},
+               503: {"model": ErrorResponse}},
+)
+def predict_alphabet(
+    file: UploadFile = File(..., description="Still image (jpg/png/bmp/webp) of one fingerspelled "
+                            "letter, or a short video (mp4/mov/webm/...) for J/Z motion and spelling"),
+) -> AlphabetPredictResponse:
+    """Fingerspelled letters A-Z. Images use upstream's photo path (single frame: J and Z,
+    which are movements, cannot be told apart from I and D reliably). Videos run the live
+    pipeline: mirrored frames, 8-frame smoothing, J/Z motion detection, commit rule."""
+    import cv2
+    import numpy as np
+
+    from app.asl_alphabet.spelling import COMMIT_CONFIDENCE
+    from app.models.alphabet_recognizer import HandDetector, classify_still_image, classify_video
+
+    start = time.perf_counter()
+    model = _alphabet()
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix in IMAGE_EXTENSIONS:
+        path = _save_upload(file, suffix)
+        try:
+            image = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
+        finally:
+            path.unlink(missing_ok=True)
+        if image is None:
+            raise VideoError("unreadable_image", "Could not decode the image.", 422)
+        with _slots:
+            detector = HandDetector(still_image=True)
+            try:
+                r = classify_still_image(model, detector, image)
+            finally:
+                detector.close()
+        warnings = []
+        if r.best in ("J", "Z"):
+            warnings.append("J and Z are movements; a still image cannot confirm them. Send a video.")
+        if not r.hand_detected:
+            warnings.append("No hand detected.")
+        return AlphabetPredictResponse(
+            input_type="image", hand_detected=r.hand_detected, prediction=r.best,
+            confidence=round(r.confidence, 4), passes_threshold=r.passes_threshold,
+            uncertain=r.uncertain, stable=None, threshold=COMMIT_CONFIDENCE,
+            top_predictions=[LetterPrediction(label=g.label, confidence=round(g.confidence, 4)) for g in r.top],
+            motion_supported=False, inference_time_ms=round((time.perf_counter() - start) * 1000, 1),
+            model_name=ALPHABET_MODEL_NAME, warnings=warnings,
+        )
+
+    if suffix not in settings.allowed_extensions:
+        allowed = ", ".join(sorted(IMAGE_EXTENSIONS | settings.allowed_extensions))
+        raise VideoError("unsupported_file_type",
+                         f"Unsupported file type '{suffix or '(none)'}'. Allowed: {allowed}.", 415)
+    path = _save_upload(file, suffix)
+    try:
+        with _slots:
+            try:
+                v = classify_video(model, path, max_seconds=settings.max_video_seconds)
+            except ValueError as exc:
+                code = str(exc)
+                if code == "video_too_long":
+                    raise VideoError(code, f"Video is longer than {settings.max_video_seconds:.0f} s.", 413) from None
+                raise VideoError("unreadable_video", "Could not open the video.", 422) from None
+    finally:
+        path.unlink(missing_ok=True)
+    if v.frames == 0:
+        raise VideoError("empty_or_corrupt_video", "No frames could be decoded.", 422)
+    f = v.final
+    hand = bool(f and f.hand_detected)
+    warnings = [] if hand else ["No hand detected in the video."]
+    return AlphabetPredictResponse(
+        input_type="video", hand_detected=hand, prediction=f.best if hand else None,
+        confidence=round(f.confidence, 4) if hand else 0.0,
+        passes_threshold=bool(hand and f.passes_threshold), uncertain=not hand or f.uncertain,
+        stable=bool(hand and f.stable), threshold=COMMIT_CONFIDENCE,
+        top_predictions=[LetterPrediction(label=g.label, confidence=round(g.confidence, 4)) for g in (f.top if hand else [])],
+        motion_supported=True, motion_override=v.motion_overrides[-1] if v.motion_overrides else None,
+        committed_letters=v.committed, frames_processed=v.frames, frames_with_hand=v.frames_with_hand,
+        inference_time_ms=round((time.perf_counter() - start) * 1000, 1),
+        model_name=ALPHABET_MODEL_NAME, warnings=warnings,
+    )
+

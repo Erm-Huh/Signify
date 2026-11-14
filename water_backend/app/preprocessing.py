@@ -114,10 +114,33 @@ def _holistic_to_frame(result: object) -> npt.NDArray[np.float32]:
     return out
 
 
-def extract_landmarks(path: Path, settings: Settings) -> ExtractedClip:
-    """Decode ``path`` and run MediaPipe Holistic on each frame."""
+def make_holistic(settings: Settings, model_complexity: int | None = None):  # noqa: ANN201
+    """The MediaPipe Holistic graph used for every clip (uploads and live mode)."""
     import mediapipe as mp  # imported lazily: slow import, not needed for /health tests
 
+    return mp.solutions.holistic.Holistic(
+        static_image_mode=False,
+        model_complexity=(
+            settings.holistic_model_complexity if model_complexity is None else model_complexity
+        ),
+        smooth_landmarks=True,
+        refine_face_landmarks=False,
+    )
+
+
+def frame_to_landmarks(holistic: object, bgr: npt.NDArray[np.uint8], max_side: int) -> npt.NDArray[np.float32]:
+    """One BGR frame -> [543, 3] landmarks (NaN where missing). Uniform downscaling keeps
+    MediaPipe's image-normalised coordinates unchanged."""
+    scale = max_side / max(bgr.shape[:2])
+    if scale < 1.0:
+        bgr = cv2.resize(bgr, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    rgb.flags.writeable = False
+    return _holistic_to_frame(holistic.process(rgb))  # type: ignore[attr-defined]
+
+
+def extract_landmarks(path: Path, settings: Settings) -> ExtractedClip:
+    """Decode ``path`` and run MediaPipe Holistic on each frame."""
     cap = cv2.VideoCapture(str(path))
     if not cap.isOpened():
         raise VideoError("unreadable_video", "Could not open the video. Is it a valid video file?")
@@ -142,12 +165,7 @@ def extract_landmarks(path: Path, settings: Settings) -> ExtractedClip:
         timestamps: list[float] = []
         width = height = 0
         raw_index = 0
-        holistic = mp.solutions.holistic.Holistic(
-            static_image_mode=False,
-            model_complexity=settings.holistic_model_complexity,
-            smooth_landmarks=True,
-            refine_face_landmarks=False,
-        )
+        holistic = make_holistic(settings)
         try:
             while True:
                 if not cap.grab():
@@ -166,12 +184,7 @@ def extract_landmarks(path: Path, settings: Settings) -> ExtractedClip:
                     continue
                 timestamps.append(float(cap.get(cv2.CAP_PROP_POS_MSEC)))
                 height, width = bgr.shape[:2]
-                scale = settings.max_frame_side / max(height, width)
-                if scale < 1.0:
-                    bgr = cv2.resize(bgr, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-                rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-                rgb.flags.writeable = False
-                frames.append(_holistic_to_frame(holistic.process(rgb)))
+                frames.append(frame_to_landmarks(holistic, bgr, settings.max_frame_side))
         finally:
             holistic.close()
     finally:
