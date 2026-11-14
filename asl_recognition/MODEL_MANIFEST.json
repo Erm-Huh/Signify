@@ -1,0 +1,37 @@
+{
+  "source_revision": "45ff2c0e26925c50f4546073bd573fe3ca7a5e6e",
+  "gesturesign_revision": "ffc0578e68449676b6e9545da82092679914e8c8",
+  "models": [
+    {
+      "path": "asl_cnn_model.onnx",
+      "sha256": "c3843cabc57032080a81e5995b578139c90631080af1e6d070df1c6dfdc1172b",
+      "bytes": 1235355
+    },
+    {
+      "path": "vendor/GestureSign/web/public/models/model.onnx",
+      "sha256": "2fc9038cc409a5117a3eb2bb350b005663957a03e19f24c24b1f209c703c753d",
+      "bytes": 5622355
+    }
+  ],
+  "letter": {
+    "input": {
+      "name": "input_image",
+      "shape": [
+        "batch",
+        96,
+        96,
+        3
+      ],
+      "dtype": "float32"
+    },
+    "outputs": [
+      "logits",
+      "conv1_relu",
+      "dense_features"
+    ],
+    "classes": 26,
+    "labels": "class_names.txt",
+    "preprocessing": "preprocessing.py",
+    "word_metadata": "vendor/GestureSign/web/public/models/model-meta.json"
+  }
+}
