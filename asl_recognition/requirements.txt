@@ -1,0 +1,6 @@
+# Tested with Python 3.11; runtime only, no training dependencies.
+# MediaPipe must expose the legacy solutions Hands/Holistic APIs.
+opencv-python==4.11.0.86
+mediapipe==0.10.21
+numpy==1.26.4
+onnxruntime==1.32.0
