@@ -496,16 +496,22 @@ class Component extends DCLogic {
       if ((req === 'pause' && m.paused) || (req === 'resume' && !m.paused)) patch.pauseReq = null;
       if (m.paused && this.frameUrl) this.setFrame('');
       if (this.state.bridgeError) patch.bridgeError = '';
-      if (m.commits && m.commits.length) {                                             // "+HELLO" flash
+      // Confidence gate: a sign is only shown once the bridge has committed it (its model
+      // cleared its own threshold and held steady). Show it for a moment, as it lands in the box.
+      let hit = (m.commits || []).filter((c) => /^[a-z0-9]/i.test(c.label || '')).pop();
+      // Backup so the overlay and the paragraph never disagree: if the committed text grew but
+      // this message carried no commit (one was missed), show what was just added.
+      const prevText = this.state.b ? String(this.state.b.text || '') : null;
+      const nextText = String(m.text || '');
+      if (!hit && prevText !== null && nextText.length > prevText.length && nextText.startsWith(prevText)) {
+        const added = nextText.slice(prevText.length).trim().split(/\s+/).pop();
+        if (added && /^[a-z0-9]/i.test(added)) hit = { label: added, kind: added.length === 1 ? 'LETTER' : 'WORD' };
+      }
+      if (hit) {                                                                        // "+HELLO" flash
         patch.flash = true;
         clearTimeout(this.flashT); this.flashT = setTimeout(() => this.setState({ flash: false }), 350);
-        // Confidence gate: a sign is only shown once the bridge has committed it (its model
-        // cleared its own threshold and held steady). Show it for a moment, as it lands in the box.
-        const hit = m.commits.filter((c) => /^[a-z0-9]/i.test(c.label || '')).pop();
-        if (hit) {
-          patch.caught = { label: String(hit.label).toUpperCase(), kind: hit.kind };
-          clearTimeout(this.caughtT); this.caughtT = setTimeout(() => this.setState({ caught: null }), 1600);
-        }
+        patch.caught = { label: String(hit.label).toUpperCase(), kind: hit.kind };
+        clearTimeout(this.caughtT); this.caughtT = setTimeout(() => this.setState({ caught: null }), 1600);
       }
       this.setState(patch);
     } else if (m.type === 'error') {
