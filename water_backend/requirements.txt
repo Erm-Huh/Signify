@@ -14,3 +14,6 @@ opencv-contrib-python==4.11.0.86
 # tests
 pytest==9.2.0
 httpx==0.28.1
+
+# live bridge (Blake_frontend/server/ws_bridge.py)
+websockets==15.0.1

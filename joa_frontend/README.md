@@ -1,49 +1,72 @@
-# Signify: Rev 3 website export
+# Signify website (wireframe V4)
 
-A one-to-one export of the **Revision 3** design ("clinical focus, natural look") from the design canvas,
-taken from the live canvas on 2026-11-14, including your Home page edits.
-It's plain HTML with no build step and no dependencies except Google Fonts (DM Sans).
+Plain HTML/CSS/JS, no build step. Fonts come from Google Fonts (DM Sans). GitHub Pages can serve this folder as is.
 
-## Files
+| File | Page |
+|---|---|
+| `index.html` | Home |
+| `visit.html` | Translate: camera, tap to say, speaker box (speech to text + name catching), text to speech, visit summary |
+| `why.html` | Why it matters |
+| `how.html` | How it works |
+| `team.html` | Team (headshots in `assets/`) |
+| `assets/view.js` | Small template runtime the pages use (documented at the top of the file) |
 
-| File | Page | Nav label |
-|---|---|---|
-| `index.html` | Home | Home |
-| `visit.html` | Your visit: Front desk → Waiting room → Nurse → Doctor → Checkout | Translate |
-| `why.html` | Why it matters | Why it matters |
-| `how.html` | How it works | How it works |
-| `team.html` | Team | Team |
-| `assets/view.js` | Small template runtime the pages use (about 150 lines, documented at the top) | |
+Each page has a `<template id="view">` with the design's markup and a `class Component` with its state and behavior.
 
-Each page has:
-- `<template id="view">`: the page markup exactly as designed. Inline styles hold the design (palette: lilac `#7d5ba6`, teal `#558564`, blue `#8fd9eb`, pink `#ffc0cb`, graphite `#2f2f2f`).
-- `class Component`: page state and behavior. `renderVals()` returns the values the template shows (`{{name}}`), and handlers call `this.setState(...)`.
+## How the Translate page gets signs (hybrid: the website + the laptop)
 
-## Run it
+The website itself never touches the camera. Blake's bridge (`Blake_frontend/server/ws_bridge.py`) runs on the
+laptop, owns the webcam, runs the word + letter models from `water_backend/` and decides what gets added to the
+sentence. The Translate page connects to it over a WebSocket and shows its camera preview, the live sign and the
+sentence, and sends commands back (capture, confirm, mode, word/letter pick, undo, clear).
 
-```bash
-python3 -m http.server 8080
+```
+webcam -> ws_bridge.py (laptop) --ws://localhost:8765--> visit.html (localhost or GitHub Pages)
 ```
 
-Open http://localhost:8080. Opening `index.html` straight from the folder also works.
-GitHub Pages can serve this folder as is.
+The page works the same whether it is opened from `localhost` or from GitHub Pages: it always connects to the
+bridge address in **Settings** (default `ws://localhost:8765`).
 
-## What is simulated, and where to integrate (`visit.html`)
+## Run the demo on the laptop
 
-All of these live inside `class Component` in `visit.html`:
+One-time setup (Python 3.11 is required by MediaPipe 0.10.21; `uv` downloads it):
 
-| Design behavior | Simulated by | Replace with |
-|---|---|---|
-| Signs appear one by one as chips | `tick()`, started by `toggleRun` | Results from the sign model. Push `{ word, alt, unsure }` into `state.chips`. `alt` is the model's 2nd guess, `unsure` = low confidence (dashed chip) |
-| Gloss → English sentence | `draftEnglish` in `renderVals()` (matches the demo sentence per stop) | Your gloss-to-English step |
-| "Speaking: …" indicator | `say(text)` | Real text to speech, e.g. `speechSynthesis.speak(new SpeechSynthesisUtterance(text))` with the chosen voice/speed/volume |
-| Staff reply arrives automatically | `patientSays()` → `setTimeout` with `this.stops[i].auto` | Real staff input (the reply box and quick replies already work) |
-| Waiting-room "nurse calls you" | `callMe` | Real queue status |
-| Request an interpreter | `requestInterp` | Your VRI / interpreter request |
-| Demo sentences per stop | `this.stops[i].gloss / alts / english` | Remove once the model is connected |
+```bash
+cd water_backend
+uv venv --python 3.11 .venv
+uv pip install --python .venv/Scripts/python.exe -r requirements.txt     # macOS/Linux: .venv/bin/python
+```
 
-Everything else (stops, confirm step, Undo, Start over, tap phrases, pain scale, flip, urgent alert, voice settings, visit summary, copy) already works as designed.
+Every time:
 
-## Placeholders still in the copy
+```bash
+# terminal 1: the bridge (camera 0)
+cd water_backend
+.venv/Scripts/python.exe ../Blake_frontend/server/ws_bridge.py           # macOS/Linux: .venv/bin/python
+#   no camera? replay a clip:  ... ws_bridge.py --source examples/hello.mp4
 
-`[NAME]`, `[N]`, `[X]%`, `[STAT]`, `[CITE]`, `[CONFIRM]`, `[TTS ENGINE: TBD]`, `[DEVPOST LINK]`, `[PLACEHOLDER]` and similar. They are kept exactly as in the design.
+# terminal 2: the website (or just open the GitHub Pages URL)
+cd joa_frontend
+python -m http.server 5173
+```
+
+Open http://localhost:5173/visit.html. The badge above the camera should say **Sign bridge connected**.
+
+- **GitHub Pages + laptop:** open the Pages URL on the laptop that runs the bridge. Chrome may ask to allow
+  access to devices on your local network the first time; allow it.
+- **The sentence** builds up word by word in the box under the conversation ("Sign, tap or type to start").
+  It is editable: click in and type over a wrong sign. **Say it** (or Enter) speaks it and posts it to the
+  conversation; **Undo** drops the last word; **Start over** clears it.
+- Keyboard: Space capture · Enter confirm · M mode · W / L pick word or letter · R repeat letter · Backspace undo · C clear.
+  Tab is left for keyboard navigation (Blake's page uses Tab for mode; here it is M).
+
+## Speech
+
+Text to speech (`say()`) and the speaker's speech to text (`toggleListenLive()`) use the browser for now
+(`speechSynthesis`, and `SpeechRecognition` in Chrome/Edge). They will move to ElevenLabs through endpoints in
+`water_backend/`, so the API key stays on the laptop (`water_backend/.env`, which git ignores).
+
+## Still simulated
+
+- Waiting room "Demo: nurse calls you" and "Request an interpreter".
+- Bracketed placeholders in the copy (`[NAME]`, `[DEVPOST LINK]`, `[CITE]` and similar).
