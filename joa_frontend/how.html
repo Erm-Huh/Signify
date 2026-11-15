@@ -45,7 +45,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 
 <section style="display: flex; flex-direction: column; gap: 8px">
 <h1 style="margin: 0; font-size: 32px">How it works</h1>
-<p style="margin: 0; color: #444; max-width: 720px">From webcam to spoken words in under [X] ms. Click each step.</p>
+<p style="margin: 0; color: #444; max-width: 720px">From webcam to spoken words in about a second. Click each step.</p>
 </section>
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px">
@@ -80,27 +80,28 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 
 <section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 8px">
 <h2 style="margin: 0; font-size: 20px">Frontend ↔ model contract</h2>
-<p style="margin: 0; color: #444">Agreed early so the UI can be built on mock data while the model trains.</p>
-<pre style="margin: 0; padding: 16px; background: #7d5ba6; color: #ffffff; border-radius: 14px; overflow-x: auto; font-size: 14px">{ "live_sign": "PAIN", "confidence": 0.91, "hold": 0.6,
-  "gloss": ["HEAD", "PAIN"], "english": null, "landmarks": [...] }</pre>
-<span style="font-size: 13px; color: #555">[BACKEND TEAM: confirm field names]</span>
+<p style="margin: 0; color: #444">The local app streams this to the page about 30 times a second over a WebSocket, alongside the camera frames.</p>
+<pre style="margin: 0; padding: 16px; background: #7d5ba6; color: #ffffff; border-radius: 14px; overflow-x: auto; font-size: 14px">{ "type": "state", "mode": "auto", "kind": "word", "label": "PAIN",
+  "stable": true, "word": { "label": "PAIN", "confidence": 0.91 },
+  "letter": { ... }, "text": "MY HEAD PAIN", "paused": false }</pre>
+<span style="font-size: 13px; color: #555">Field names from the bridge in Blake_frontend/server/ws_bridge.py.</span>
 </section>
 <section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 12px">
 <h2 style="margin: 0; font-size: 20px">Architecture</h2>
 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px">
-<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Browser: webcam</span><span aria-hidden="true">→</span>
-<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Hand / pose landmarks</span><span aria-hidden="true">→</span>
-<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Sign classifier [WHERE IT RUNS]</span><span aria-hidden="true">→</span>
-<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Gloss → English</span><span aria-hidden="true">→</span>
-<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Captions + text-to-speech</span>
+<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Webcam</span><span aria-hidden="true">→</span>
+<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Hand / pose landmarks (MediaPipe)</span><span aria-hidden="true">→</span>
+<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Word + letter models (local)</span><span aria-hidden="true">→</span>
+<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Sentence + smart spacing</span><span aria-hidden="true">→</span>
+<span class="ph" style="padding: 14px 16px; border: 1px dashed #558564; border-radius: 8px">Captions + natural voice</span>
 </div>
-<span style="font-size: 13px; color: #555">[BACKEND TEAM: confirm each box and whether anything runs on a server]</span>
+<span style="font-size: 13px; color: #555">Today it all runs locally on one laptop. The only thing sent out is the text being spoken, which goes to ElevenLabs for the voice. As Signify grows, recognition moves to cloud processing so any tablet or phone can use it with no laptop.</span>
 </section>
 
 <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
-<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 32px; font-weight: 700">[X]%</div><p style="margin: 4px 0 0; color: #444">Top-1 accuracy on [N] signs</p><span style="font-size: 12px; color: #555">Test set: [DATASET SPLIT]</span></div>
-<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 32px; font-weight: 700">[X] ms</div><p style="margin: 4px 0 0; color: #444">Average sign-to-caption time</p><span style="font-size: 12px; color: #555">Measured on [LAPTOP]</span></div>
-<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 32px; font-weight: 700">[N]</div><p style="margin: 4px 0 0; color: #444">Training videos used</p><span style="font-size: 12px; color: #555">From ASL Citizen [CONFIRM]</span></div>
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 32px; font-weight: 700">72.1%</div><p style="margin: 4px 0 0; color: #444">Top-1 accuracy on 250 signs (88.1% top-5)</p><span style="font-size: 12px; color: #555">Test set: 14,396 clips from 3 signers held out of training. Letters A–Z: 93.7%</span></div>
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 32px; font-weight: 700">~1 s</div><p style="margin: 4px 0 0; color: #444">Sign-to-caption time</p><span style="font-size: 12px; color: #555">Letters commit in ~0.4 s, words in ~1 s (estimated from the confidence settings)</span></div>
+<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 32px; font-weight: 700">70,272</div><p style="margin: 4px 0 0; color: #444">Training clips used</p><span style="font-size: 12px; color: #555">From Google’s asl-signs dataset (Kaggle Isolated Sign Language Recognition)</span></div>
 </section>
 
 <section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 12px">
@@ -122,13 +123,13 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 </section>
 
 <section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px">
-<div><h2 style="margin: 0; font-size: 20px">Privacy</h2><p style="margin: 4px 0 0; color: #444">[CONFIRM] Video never leaves your device. Nothing is recorded or stored.</p></div>
+<div><h2 style="margin: 0; font-size: 20px">Privacy</h2><p style="margin: 4px 0 0; color: #444">Video never leaves the laptop, and nothing is recorded or stored. Only text you choose to have spoken is sent to ElevenLabs to make the voice. One tap pauses the camera for privacy.</p></div>
 <a href="https://github.com/Erm-Huh/Signify" style="min-height: 48px; padding: 0 24px; border-radius: 14px; border: 1px solid #7d5ba6; background: #ffffff; color: #2f2f2f; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none">Read the code</a>
 </section>
 </main>
 <footer style="border-top: 1px solid #ece6f2; background: #ffffff">
 <div style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 13px; color: #555">
-<span>Signify, a hackathon project · <a href="https://github.com/Erm-Huh/Signify">GitHub</a> · [DEVPOST LINK]</span>
+<span>Signify · built at HackUMass XIV · <a href="https://github.com/Erm-Huh/Signify">GitHub</a></span>
 <span>Brand layout v0.1</span>
 </div>
 </footer>
@@ -141,24 +142,24 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
     const steps = [
-      ['Capture', 'The webcam is read frame by frame in the browser. Nothing to install.', ['getUserMedia', 'Canvas']],
-      ['Detect hands', 'Hand and body landmarks are tracked to describe each sign’s handshape, position and motion.', ['[e.g. MediaPipe]']],
-      ['Recognize', 'A model trained on isolated ASL signs predicts the most likely sign and a confidence score.', ['[MODEL]', 'ASL Citizen dataset']],
-      ['Translate grammar', 'ASL has its own grammar, so it isn\u2019t word-for-word English. Raw signs (gloss) like HEAD PAIN TWO DAY are turned into natural English. Both are shown so nothing is hidden.', ['[e.g. small language model / rules]']],
-      ['Speak', 'The sentence is shown in large type and read aloud. Staff can reply by typing or speaking.', ['Web Speech API']]
+      ['Capture', 'The Signify app on the laptop reads the webcam frame by frame and streams it to the page, so you see exactly what the model sees.', ['OpenCV', 'WebSockets']],
+      ['Detect hands', 'Hand and body landmarks are tracked to describe each sign’s handshape, position and motion.', ['MediaPipe']],
+      ['Recognize', 'Two models run side by side: a word model for 250 signs and a letter model for A to Z fingerspelling. Nothing is shown until a model is confident.', ['Transformer on landmarks (ONNX Runtime)', 'asl-signs dataset', 'Letter classifier']],
+      ['Build the sentence', 'Signs and letters go into an editable sentence. Smart spacing splits fingerspelled letters into words, and lowering your hand ends a word. Turning ASL grammar into natural English is next on our roadmap.', ['Smart spacing', 'Editable text']],
+      ['Speak', 'The sentence is shown in large type and read aloud in a natural voice. Staff reply by typing or speaking, and Signify picks up who is talking (doctor, nurse) from what they say.', ['ElevenLabs', 'Web Speech API']]
     ];
     const story = [
-      ['Challenges we ran into', '[e.g. similar handshapes getting confused, lighting, real-time speed in the browser]'],
-      ['Accomplishments we’re proud of', '[e.g. live recognition running at N fps, two-way conversation working end to end]'],
-      ['What we learned', '[e.g. ASL grammar is not word-for-word English; what Deaf users told us]'],
-      ['What’s next', '[e.g. more signs, fingerspelling, continuous sentences, mobile, ASL-to-ASL avatar replies]']
+      ['Challenges we ran into', 'Letters that share a handshape (M, N, S, T) getting confused, predictions flickering frame to frame, and keeping everything real time. Confidence gates fixed the flicker: nothing shows until the model is sure.'],
+      ['Accomplishments we’re proud of', 'Words and fingerspelling running live together, a natural voice, two-way conversation that knows when the doctor or nurse is talking, and a one-tap camera privacy pause.'],
+      ['What we learned', 'ASL is its own language with its own grammar, not word-for-word English. And an honest test on signers the model never saw matters more than a big number.'],
+      ['What’s next', 'Cloud processing so any tablet or phone works with no laptop, more signs, continuous sentences with ASL grammar, and a mobile app.']
     ];
     const card = (a) => 'text-align: left; min-height: 88px; padding: 16px; border-radius: 16px; ' + (a ? 'background: #7d5ba6; color: #ffffff; border: 1px solid #7d5ba6;' : 'background: #ffffff; color: #2f2f2f; border: 1px solid #8a7f99;');
     return {
       steps: steps.map((d, i) => ({ n: i + 1, title: d[0], active: s.step === i, style: card(s.step === i), pick: () => this.setState({ step: i }) })),
       stepTitle: steps[s.step][0], stepBody: steps[s.step][1],
       stepTech: steps[s.step][2].map((n) => ({ name: n })),
-      stack: ['HTML / CSS / JS', '[FRAMEWORK]', '[e.g. MediaPipe]', '[ML LIBRARY]', 'Web Speech API', 'ASL Citizen', 'GitHub Pages', '[OTHER]'].map((n) => ({ name: n })),
+      stack: ['HTML / CSS / JS', 'Python', 'MediaPipe', 'ONNX Runtime', 'OpenCV', 'WebSockets', 'ElevenLabs', 'Web Speech API', 'asl-signs dataset', 'GitHub Pages'].map((n) => ({ name: n })),
       story: story.map((d, i) => ({ title: d[0], body: d[1], open: s.open === i, sign: s.open === i ? '−' : '+', pick: () => this.setState({ open: s.open === i ? -1 : i }) }))
     };
   }

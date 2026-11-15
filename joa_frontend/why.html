@@ -47,7 +47,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 <div style="flex: 2 1 460px; display: flex; flex-direction: column; gap: 16px">
 <span style="font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #555">Why it matters</span>
 <h1 style="margin: 0; font-size: 40px; line-height: 1.1">At the front desk, waiting for an interpreter means waiting for care.</h1>
-<p style="margin: 0; font-size: 18px; color: #444">Even with video interpreting in place, clinics can wait 5 to 20+ minutes for a remote interpreter to connect, even for simple check-in questions. Signify handles the everyday part instantly, so certified interpreters can focus on the conversations that need them. [ADD YOUR TEAM'S STORY]</p>
+<p style="margin: 0; font-size: 18px; color: #444">Even with video interpreting in place, clinics can wait 5 to 20+ minutes for a remote interpreter to connect, even for simple check-in questions. Signify handles the everyday part instantly, so certified interpreters can focus on the conversations that need them. We built Signify for families like Lupe's (below), where a child shouldn't have to be the interpreter at every appointment.</p>
 </div>
 <div class="ph" style="flex: 1 1 280px; height: 240px; border: 1px dashed #558564; border-radius: 16px; display: flex; align-items: center; justify-content: center; text-align: center; color: #444; font-size: 14px; padding: 16px">PHOTO / ILLUSTRATION<br>(a real conversation moment, with permission)</div>
 </section>
@@ -94,8 +94,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 </div>
 <div style="flex: 1 1 340px; background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 12px">
 <h2 style="margin: 0; font-size: 20px">What we heard</h2>
-<blockquote style="margin: 0; padding: 16px; border: 1px solid #e6dff0; border-radius: 14px; font-size: 17px">“[QUOTE from a Deaf community member or ASL teacher you spoke with]”<br><span style="font-size: 13px; color: #555">— [Name / role, with permission]</span></blockquote>
-<span style="font-size: 13px; color: #555">Talking to real users is one of the strongest signals for judges.</span>
+<blockquote style="margin: 0; padding: 16px; border: 1px solid #e6dff0; border-radius: 14px; font-size: 17px">Too often a hearing child ends up interpreting at the doctor’s office, and the Deaf parent loses privacy and control of their own care. Lupe’s story is why we started.</blockquote>
+<span style="font-size: 13px; color: #555">We’re gathering direct quotes from Deaf signers and ASL teachers during our pilots.</span>
 </div>
 </section>
 
@@ -126,10 +126,9 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 <ul style="margin: 0; padding-left: 20px; color: #444">
 <li>Clinic and urgent-care front desks first, then pharmacies and hospital intake</li>
 <li>Embeds in an existing kiosk or check-in page</li>
-<li>Video processed in the browser, never stored, which keeps it privacy-friendly</li>
-<li>Pricing: A zero cots model.&nbsp;</li>
+<li>Video processed locally, never stored, which keeps it privacy-friendly</li>
+<li>Pricing: a zero-cost model</li>
 </ul>
-<span style="font-size: 13px; color: #555">Market signal: established relay providers are already buying AI sign-language startups [CITE].</span>
 </div>
 </section>
 <section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 32px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px">
@@ -139,7 +138,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 </main>
 <footer style="border-top: 1px solid #ece6f2; background: #ffffff">
 <div style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 13px; color: #555">
-<span>Signify, a hackathon project · <a href="https://github.com/Erm-Huh/Signify">GitHub</a> · [DEVPOST LINK]</span>
+<span>Signify · built at HackUMass XIV · <a href="https://github.com/Erm-Huh/Signify">GitHub</a></span>
 <span>Brand layout v0.1</span>
 </div>
 </footer>
@@ -153,15 +152,15 @@ class Component extends DCLogic {
     const s = this.state;
     const data = [
       ['Check-in', 'A Deaf patient writes symptoms on a clipboard while the line grows, and details get lost before triage.', 'They sign or tap at the kiosk, confirm the English, and the desk hears it and replies on screen.'],
-      ['Waiting room', 'Their name gets called out loud, and they miss it.', '[PLACEHOLDER] Their turn shows on their screen, with a gentle vibration on their phone.'],
+      ['Waiting room', 'Their name gets called out loud, and they miss it.', 'Their turn shows on their screen, so they never miss it.'],
       ['Pharmacy pickup', 'Notes go back and forth about the dosage, and they leave unsure.', 'The question is signed, captioned and spoken, and the pharmacist\u2019s answer is shown in plain English.'],
-      ['Classroom (next)', '[PLACEHOLDER] Questions held back until after class.', '[PLACEHOLDER] Raise hand, sign it, and the room hears it.']
+      ['Classroom (next)', 'Questions held back until after class, or never asked.', 'Raise a hand, sign it, and the room hears it.']
     ];
     const pr = [
       ['Signer first', 'The signer is the speaker. Signify is just the bridge.'],
       ['Supports interpreters', 'For check-in and everyday questions. Diagnosis, consent and complex care still call for a certified medical interpreter, and Signify can request one.'],
-      ['Private by default', 'Video is processed on the device and never stored, which matters for patient privacy (HIPAA).'],
-      ['Built with the community', '[PLAN] Feedback from Deaf users shapes what we build next.']
+      ['Private by default', 'Video is processed locally and never stored, which matters for patient privacy (HIPAA).'],
+      ['Built with the community', 'Next we pilot with Deaf signers and ASL teachers, and their feedback decides what we build.']
     ];
     const tab = (a) => 'min-height: 44px; padding: 0 14px; border-radius: 8px; font-weight: 600; ' + (a ? 'background: #7d5ba6; color: #ffffff; border: 1px solid #7d5ba6;' : 'background: #ffffff; color: #2f2f2f; border: 1px solid #8a7f99;');
     return {

@@ -83,9 +83,9 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 
 <div style="display: contents"><sc-if value="{{isWaiting}}" hint-placeholder-val="{{false}}">
 <div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center">
-<div style="flex: 1 1 200px"><span style="font-size: 12px; font-weight: 600; color: #444">YOUR PLACE IN LINE</span><div style="font-size: 56px; font-weight: 700; color: #7d5ba6; line-height: 1">{{queuePos}}</div><span style="color: #444">About {{queueMin}} min [ESTIMATE]</span></div>
+<div style="flex: 1 1 200px"><span style="font-size: 12px; font-weight: 600; color: #444">YOUR PLACE IN LINE</span><div style="font-size: 56px; font-weight: 700; color: #7d5ba6; line-height: 1">{{queuePos}}</div><span style="color: #444">About {{queueMin}} min</span></div>
 <div style="flex: 2 1 280px; display: flex; flex-direction: column; gap: 8px">
-<span style="font-size: 15px">No need to listen for your name. When it's your turn, this screen lights up and your phone buzzes [PLACEHOLDER].</span>
+<span style="font-size: 15px">No need to listen for your name. When it's your turn, this screen lights up.</span>
 <button type="button" onClick="{{callMe}}" style="min-height: 48px; padding: 0 20px; border-radius: 14px; border: none; background: #558564; color: #ffffff; font-weight: 700; align-self: flex-start">Demo: nurse calls you</button>
 </div>
 </div>
@@ -216,7 +216,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 <h2 style="margin: 0; font-size: 20px; font-weight: 600">Your visit so far</h2>
 <button type="button" onClick="{{copySummary}}" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">{{copyLabel}}</button>
 </div>
-<sc-if value="{{noLog}}" hint-placeholder-val="{{true}}"><p style="margin: 0; color: #444">Everything said at each stop is kept here, so you never have to repeat yourself. [CONFIRM: cleared when the visit ends]</p></sc-if>
+<sc-if value="{{noLog}}" hint-placeholder-val="{{true}}"><p style="margin: 0; color: #444">Everything said at each stop is kept here, so you never have to repeat yourself. Nothing is saved: it clears when you close this page.</p></sc-if>
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
 <sc-for list="{{log}}" as="g" hint-placeholder-count="0">
 <div style="border: 1px solid #ece6f2; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px">
@@ -229,7 +229,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 </main>
 <footer style="border-top: 1px solid #ece6f2; background: #ffffff">
 <div style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 13px; color: #555">
-<span>Signify, a hackathon project · <a href="https://github.com/Erm-Huh/Signify">GitHub</a> · [DEVPOST LINK]</span>
+<span>Signify · built at HackUMass XIV · <a href="https://github.com/Erm-Huh/Signify">GitHub</a></span>
 <span>Clinical revision v0.3</span>
 </div>
 </footer>
@@ -307,7 +307,7 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.stops = [
-      { id: 'desk', label: 'Front desk', who: 'Receptionist', name: 'Front desk · [NAME]', hint: 'Tell them why you’re here. They’ll check you in.',
+      { id: 'desk', label: 'Front desk', who: 'Receptionist', name: 'Front desk', hint: 'Tell them why you’re here. They’ll check you in.',
         gloss: ['HEAD', 'PAIN', 'TWO', 'DAY'], alts: ['THINK', 'HURT', 'THREE', 'WEEK'], english: 'I’ve had a headache for two days.',
         phrases: ['I’m here to check in', 'I have an appointment', 'I’m a new patient', 'Here’s my insurance card'],
         replies: ['Please take a seat', 'Can I see your ID?', 'Please fill out this form'], auto: 'Thanks! You’re checked in. Please take a seat.' },
@@ -315,11 +315,11 @@ class Component extends DCLogic {
         gloss: ['TIME', 'HOW-LONG'], alts: ['WHEN', 'MANY'], english: 'How much longer will it be?',
         phrases: ['How much longer?', 'Where is the restroom?', 'I feel worse', 'Can I get water?'],
         replies: ['About 10 more minutes', 'Restroom is down the hall', 'I’ll let the nurse know'], auto: 'About 10 more minutes. We’ll show it here when it’s your turn.' },
-      { id: 'nurse', label: 'Nurse', who: 'Nurse', name: 'Nurse · [NAME], RN', hint: 'Vitals and symptoms. Share pain level, allergies and medicines.',
+      { id: 'nurse', label: 'Nurse', who: 'Nurse', name: 'Your nurse', hint: 'Vitals and symptoms. Share pain level, allergies and medicines.',
         gloss: ['ME', 'ALLERGIC', 'PENICILLIN'], alts: ['MY', 'SICK', 'MEDICINE'], english: 'I’m allergic to penicillin.',
-        phrases: ['It started 2 days ago', 'I take [MEDICATION]', 'It hurts here', 'I feel dizzy'],
+        phrases: ['It started 2 days ago', 'I take daily medication', 'It hurts here', 'I feel dizzy'],
         replies: ['Thanks, I’ve noted that', 'I’m going to check your blood pressure', 'Any other allergies?'], auto: 'Thank you, I’ve added that to your chart.' },
-      { id: 'doctor', label: 'Doctor', who: 'Doctor', name: 'Doctor · Dr. [NAME]', hint: 'Ask questions in your words. Ask them to slow down or write things down.',
+      { id: 'doctor', label: 'Doctor', who: 'Doctor', name: 'Your doctor', hint: 'Ask questions in your words. Ask them to slow down or write things down.',
         gloss: ['WHAT', 'MEAN'], alts: ['WHY', 'MEANING'], english: 'What does that mean?',
         phrases: ['Please slow down', 'Can you write that down?', 'What are my options?', 'I understand'],
         replies: ['Let me explain another way', 'I’ll write it down for you', 'Do you have any questions?'], auto: 'Let me explain that another way.' },
@@ -375,7 +375,7 @@ class Component extends DCLogic {
     catch (e) { this.rec = null; this.setState({ listenError: 'Couldn’t start the microphone. Try again.' }); }
   }
   // A doctor / nurse / front desk / pharmacy keyword in a self-introduction switches who
-  // "You're talking with" shows (and which conversation the reply goes into); a name fills [NAME].
+  // "You're talking with" shows (and which conversation the reply goes into); a heard name replaces the default label.
   detect(text) {
     const who = whoIsSpeaking(text);
     if (!who.role && !who.name) return;
@@ -645,7 +645,7 @@ class Component extends DCLogic {
       isWaiting: st.id === 'wait', isDoctor: st.id === 'doctor', showPain: st.id === 'nurse' || st.id === 'desk',
       queuePos: s.queue === 0 ? 'Now' : '#' + s.queue, queueMin: s.queue * 5,
       callMe: () => { this.setState({ queue: 0 }); this.push('Nurse', 'We’re ready for you. Please come to room 3.', false); setTimeout(() => this.go(2), 1800); },
-      requestInterp: () => { this.setState({ interp: true }); this.push('System', 'A certified medical interpreter has been requested [VRI / in-person].', false); },
+      requestInterp: () => { this.setState({ interp: true }); this.push('System', 'A certified medical interpreter has been requested.', false); },
       interpLabel: s.interp ? 'Interpreter requested ✓' : 'Request an interpreter',
       healthLabel: HEALTH[0], healthStyle: 'font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 16px; background: ' + HEALTH[1] + '; color: ' + HEALTH[2],
       settingsOpen: s.settingsOpen, settingsExpanded: s.settingsOpen ? 'true' : 'false',
