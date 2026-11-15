@@ -66,7 +66,7 @@ client -> server, text, one command per message::
     {"type":"cmd","cmd":"pause"}         privacy: release the webcam (light off), stop reading
     {"type":"cmd","cmd":"resume"}        reopen the webcam
 
-Under-the-hood viewer (joa_frontend/backend.html, embedded on how.html)::
+Under-the-hood viewer (the "Under the hood, live" section of joa_frontend/how.html)::
 
     client -> server:  {"type":"debug","on":true}
     every state message then carries "debug": raw word/letter internals, the 21 hand
