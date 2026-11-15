@@ -61,7 +61,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 
 <section aria-label="You" style="flex: 5 1 720px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
 
-<div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #e9f8fc, #fff0f3)">
+<div aria-live="polite" style="{{whoCardStyle}}">
 <div style="display: flex; align-items: center; gap: 12px">
 <span class="ph" aria-hidden="true" style="width: 48px; height: 48px; border-radius: 24px; flex: none"></span>
 <div><span style="display: block; font-size: 12px; font-weight: 600; color: #444">YOU'RE TALKING WITH</span><strong style="font-size: 20px">{{whoLabel}}</strong>
@@ -112,6 +112,14 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 <div class="ph" style="{{camStyle}}">
 <img id="preview" src="{{frameSrc}}" alt="Live camera preview from the sign bridge" style="{{frameStyle}}">
 <sc-if value="{{camPrompt}}"><div style="position: relative; text-align: center; color: #444; font-size: 18px; font-weight: 600; padding: 16px; max-width: 420px">{{camPromptText}}</div></sc-if>
+<div style="display: contents"><sc-if value="{{paused}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: absolute; inset: 0; background: #2f2f2f; color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 24px">
+<span aria-hidden="true" style="font-size: 44px; line-height: 1">⏸</span>
+<strong style="font-size: 26px">Camera paused for privacy</strong>
+<span style="font-size: 16px; max-width: 420px; opacity: .9">{{pausedText}} You can still type in the box and use Tap to speak.</span>
+<button type="button" onClick="{{togglePause}}" style="min-height: 52px; padding: 0 24px; border-radius: 14px; border: none; background: #ffffff; color: #2f2f2f; font-weight: 700; font-size: 17px">Turn camera back on</button>
+</div>
+</sc-if></div>
 <sc-if value="{{showOverlay}}" hint-placeholder-val="{{false}}">
 <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; background: rgba(255,255,255,.95); border-radius: 16px; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 8px 24px rgba(47,47,47,.12)">
 <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 64px; font-weight: 700; color: #7d5ba6; line-height: 1">{{liveWord}}</span><span style="font-size: 13px; color: #444">{{holdLabel}}</span></div>
@@ -120,9 +128,11 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 </sc-if>
 </div>
 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
-<button type="button" onClick="{{cmdCapture}}" disabled="{{bridgeOff}}" style="{{primaryBtn}}">{{captureLabel}}</button>
-<button type="button" onClick="{{cmdConfirm}}" disabled="{{bridgeOff}}" style="{{liveBtn}}">Confirm</button>
-<button type="button" onClick="{{cmdMode}}" disabled="{{bridgeOff}}" aria-label="{{modeAria}}" style="{{liveBtn}}">{{modeLabel}}</button>
+<button type="button" onClick="{{togglePause}}" aria-pressed="{{paused}}" style="{{pauseBtn}}">{{pauseLabel}}</button>
+<button type="button" onClick="{{cmdCapture}}" disabled="{{signOff}}" style="{{primaryBtn}}">{{captureLabel}}</button>
+<button type="button" onClick="{{cmdSpace}}" disabled="{{bridgeOff}}" aria-label="End the word (space)" style="{{spaceBtn}}">Space ␣</button>
+<button type="button" onClick="{{cmdConfirm}}" disabled="{{signOff}}" style="{{liveBtn}}">Confirm</button>
+<button type="button" onClick="{{cmdMode}}" disabled="{{signOff}}" aria-label="{{modeAria}}" style="{{liveBtn}}">{{modeLabel}}</button>
 <span style="font-size: 14px; color: #444">{{signHint}}</span>
 </div>
 <div aria-live="polite" style="{{statusStyle}}">{{statusText}}</div>
@@ -183,8 +193,9 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 <div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px; display: flex; flex-direction: column; gap: 10px">
 <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
 <h2 style="margin: 0; font-size: 17px; font-weight: 600">Your voice (text to speech)</h2>
-<span style="font-size: 12px; padding: 2px 10px; border-radius: 14px; background: #ffc0cb">Browser voice</span>
+<span style="{{ttsTagStyle}}">{{ttsTag}}</span>
 </div>
+<div style="display: contents"><sc-if value="{{hasTtsNote}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; color: #444">{{ttsNote}}</span></sc-if></div>
 <div role="group" aria-label="Voice" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
 <sc-for list="{{voices}}" as="v" hint-placeholder-count="3"><button type="button" onClick="{{v.pick}}" aria-pressed="{{v.on}}" style="{{v.style}}"><strong style="display: block">{{v.label}}</strong><span style="font-size: 12px">{{v.desc}}</span></button></sc-for>
 </div>
@@ -233,12 +244,64 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 // Speech uses the browser for now (speechSynthesis + SpeechRecognition); ElevenLabs will replace say() and listen*().
 const DEFAULT_WS = 'ws://localhost:8765';
 const RETRY_MS = 1500;
+// Each model's own "confident" bar, mirrored from water_backend (used only to draw the progress bar):
+// word = GestureSign's calibrated notSureBelow, letter = upstream COMMIT_CONFIDENCE (app/asl_alphabet/spelling.py).
+const WORD_BAR = 0.29, LETTER_BAR = 0.75;
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 };
 const pct = (x) => Math.round((x || 0) * 100) + '%';
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const TTS_VOICES = ['warm', 'bright', 'deep'];              // ElevenLabs slots (water_backend/app/services/elevenlabs.py)
+const TTS_SPEED = [0.8, 0.9, 1.0, 1.1, 1.2];                 // ElevenLabs accepts 0.7–1.2
+const TTS_WAIT_MS = 7000;                                    // no audio by then: use the browser voice
+
+// Who is talking? Reads what the staff member said ("Hi, I'm Dr. Patel", "I'm Sarah, I'll be your
+// nurse", "This is the front desk") and returns { role, name }. Only self-introductions count:
+// "I'll go get the doctor" or "Dr. Patel will see you soon" do not change who you're talking with.
+const ROLE_WORDS = {
+  doctor: ['doctor', 'dr', 'doc', 'physician', 'surgeon', 'md', 'resident', 'attending', 'pediatrician', 'specialist'],
+  nurse: ['nurse', 'rn', 'lpn', 'np', 'cna'],
+  desk: ['receptionist', 'registration'],
+  out: ['pharmacist', 'cashier', 'checkout', 'billing']
+};
+const ROLE_TITLE = { doctor: 'Dr.', nurse: 'Nurse', desk: '', out: '' };
+const NOT_A_NAME = new Set(('here just going gonna sorry so your the a an glad happy back ready done fine good okay ok not now still also really very ' +
+  'calling looking sure today hi hello i it this that on with in at from for of and calling talking about going one new').split(' '));
+const BLOCKERS = new Set('going gonna get getting go call calling page paging ask asking see seeing find tell let with waiting wait not from for to'.split(' '));
+function roleOf(w, next) {
+  if (w === 'front' && next === 'desk') return 'desk';
+  if (w === 'medical' && next === 'assistant') return 'nurse';
+  for (const r in ROLE_WORDS) if (ROLE_WORDS[r].indexOf(w) > -1) return r;
+  return null;
+}
+const capName = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+function whoIsSpeaking(text) {
+  const out = { role: null, name: '' };
+  const clean = (w) => (w || '').replace(/[^A-Za-z'’-]/g, '');
+  const SELF = /\b(?:i['’]?m|i am|this is|it['’]s|my name['’]?s|my name is|i['’]ll be|i will be|you['’]re (?:with|seeing)|you are (?:with|seeing))\b/gi;
+  let m;
+  while ((m = SELF.exec(text))) {
+    const words = text.slice(m.index + m[0].length).trim().split(/\s+/).slice(0, 6).map(clean).filter(Boolean);
+    for (let k = 0; k < words.length; k++) {
+      const w = words[k].toLowerCase(), next = (words[k + 1] || '').toLowerCase();
+      if (BLOCKERS.has(w)) break;
+      const role = roleOf(w, next);
+      if (role) {
+        out.role = out.role || role;
+        const after = words[k + (w === 'front' || w === 'medical' ? 2 : 1)] || '';
+        // a title right after "I'm" takes the next word as the name even if lowercase ("I'm Dr. patel")
+        if (after && !NOT_A_NAME.has(after.toLowerCase()) && !roleOf(after.toLowerCase(), '') && (k === 0 || /^[A-Z]/.test(after))) out.name = out.name || capName(after);
+        break;
+      }
+      if (k === 0 && /^[A-Z]/.test(words[k]) && !NOT_A_NAME.has(w)) out.name = out.name || capName(words[k]);   // "I'm Sarah, your nurse"
+    }
+  }
+  const here = text.match(/\b(dr|doctor|nurse)\.?\s+([A-Za-z][a-z'’-]+)\s+(?:here|speaking)\b/i);       // "Nurse Kelly here"
+  if (here) { out.role = out.role || roleOf(here[1].toLowerCase(), ''); out.name = out.name || capName(here[2]); }
+  return out;
+}
 
 class Component extends DCLogic {
   constructor(props) {
@@ -265,12 +328,14 @@ class Component extends DCLogic {
         phrases: ['When is my follow-up?', 'Can I get a printed summary?', 'Thank you', 'Where do I pick up my prescription?'],
         replies: ['Twice a day with food', 'Your follow-up is in 2 weeks', 'Here is your printed summary'], auto: 'Twice a day with food. I’ll print it for you.' }
     ];
-    this.state = { stop: 0, visited: [0], running: false, chips: [], hold: 0, flash: false, urgent: false, interp: false,
+    this.state = { stop: 0, visited: [0], running: false, chips: [], hold: 0, flash: false, caught: null, urgent: false, interp: false,
       threads: [[], [], [], [], []], voice: 0, speed: 3, vol: 4, auto: true, saying: '', flipped: false, draft: '', copied: false, queue: 2, listening: false, heard: '', lines: 0, names: {}, editing: false, nameDraft: '',
       ws: store.get('signify.ws') || DEFAULT_WS, conn: 'connecting',
-      settingsOpen: false, wsDraft: '', compose: '', composeEdited: false, b: null, bridgeError: '', listenError: '' };
+      settingsOpen: false, wsDraft: '', compose: '', composeEdited: false, b: null, bridgeError: '', listenError: '',
+      ttsEngine: null, ttsNote: '', pauseReq: null, whoFlash: false };
+    this.audio = null; this.ttsWait = null; this.whoT = null;
     this.timer = null; this.sayT = null; this.replyT = null; this.listenT = null; this.sayId = 0;
-    this.sock = null; this.retryT = null; this.flashT = null; this.frameUrl = ''; this.gone = false; this.rec = null;
+    this.sock = null; this.retryT = null; this.flashT = null; this.caughtT = null; this.frameUrl = ''; this.gone = false; this.rec = null;
     this.lastText = ''; this.waitForEmpty = false; this.scrollThread = false;
   }
   componentDidMount() {
@@ -302,36 +367,88 @@ class Component extends DCLogic {
     r.onend = () => {
       this.rec = null;
       const text = (this.state.heard || finalText).trim();
-      if (text) { const said = text.charAt(0).toUpperCase() + text.slice(1); this.push('Speaker', said, false); this.detect(said); }
+      if (text) { const said = text.charAt(0).toUpperCase() + text.slice(1); this.detect(said); this.push('Speaker', said, false); this.scrollThread = true; }
       this.setState({ listening: false, heard: '', lines: this.state.lines + (text ? 1 : 0) });
     };
     this.rec = r;
     try { r.start(); this.setState({ listening: true, heard: '', listenError: '' }); }
     catch (e) { this.rec = null; this.setState({ listenError: 'Couldn’t start the microphone. Try again.' }); }
   }
+  // A doctor / nurse / front desk / pharmacy keyword in a self-introduction switches who
+  // "You're talking with" shows (and which conversation the reply goes into); a name fills [NAME].
   detect(text) {
-    const m = text.match(/\b(?:I['’]m|I am|my name is|this is)\s+(?:(Dr\.?|Doctor|Nurse|RN)\s+)?([A-Z][a-z'’-]+(?:\s+[A-Z][a-z'’-]+)?)/);
-    if (!m) return;
-    const title = m[1] ? (/^d/i.test(m[1]) ? 'Dr.' : (m[1] === 'RN' ? 'RN' : 'Nurse')) : '';
-    const id = this.stops[this.state.stop].id; const next = Object.assign({}, this.state.names); next[id] = (title ? title + ' ' : '') + m[2];
-    this.setState({ names: next });
+    const who = whoIsSpeaking(text);
+    if (!who.role && !who.name) return;
+    if (who.role) {
+      const i = this.stops.findIndex((s) => s.id === who.role);
+      if (i > -1 && i !== this.state.stop) this.go(i);
+    }
+    if (who.name) {
+      const role = this.stops[this.state.stop].id;
+      const title = ROLE_TITLE[role] || '';
+      const next = Object.assign({}, this.state.names); next[role] = (title ? title + ' ' : '') + who.name;
+      this.setState({ names: next });
+    }
+    this.setState({ whoFlash: true });
+    clearTimeout(this.whoT); this.whoT = setTimeout(() => this.setState({ whoFlash: false }), 1500);
   }
   stop() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
 
   /* ---------- speech (browser text to speech) ---------- */
+  // ElevenLabs (through the bridge, so the API key stays on the laptop) when available,
+  // otherwise the most natural voice this browser has.
   say(t) {
     if (!this.state.auto || !t) return;
-    if (this.sayT) clearTimeout(this.sayT);
+    this.hush();
     const id = ++this.sayId;
-    const done = () => { if (id === this.sayId) this.setState({ saying: '' }); };
     this.setState({ saying: t });
-    if (!window.speechSynthesis) { this.sayT = setTimeout(done, 2200); return; }
+    if (this.state.ttsEngine === 'elevenlabs' && this.sock && this.sock.readyState === WebSocket.OPEN) {
+      this.sock.send(JSON.stringify({ type: 'tts', id: id, text: t, voice: TTS_VOICES[this.state.voice], speed: TTS_SPEED[this.state.speed - 1] }));
+      this.ttsWait = { id: id, text: t, timer: setTimeout(() => this.ttsFallback(id, 'ElevenLabs took too long'), TTS_WAIT_MS) };
+      return;
+    }
+    this.sayBrowser(id, t);
+  }
+  hush() {
+    if (this.sayT) clearTimeout(this.sayT);
+    if (this.ttsWait) { clearTimeout(this.ttsWait.timer); this.ttsWait = null; }
+    if (this.audio) { try { this.audio.pause(); } catch (e) {} this.audio = null; }
+    if (window.speechSynthesis) speechSynthesis.cancel();
+  }
+  sayDone(id) { if (id === this.sayId) this.setState({ saying: '' }); }
+  onTts(m) {
+    const w = this.ttsWait;
+    if (!w || m.id !== w.id) return;                        // a newer sentence replaced this one
+    clearTimeout(w.timer); this.ttsWait = null;
+    if (m.type === 'tts_error') { this.ttsFallback(w.id, m.error); return; }
+    const a = new Audio('data:' + (m.mime || 'audio/mpeg') + ';base64,' + m.audio);
+    a.volume = [0.2, 0.4, 0.6, 0.8, 1][this.state.vol - 1];
+    a.onended = () => this.sayDone(w.id); a.onerror = () => this.ttsFallback(w.id, 'audio playback failed');
+    this.audio = a;
+    a.play().catch(() => this.ttsFallback(w.id, 'the browser blocked audio playback'));
+    this.setState({ ttsNote: '' });
+  }
+  ttsFallback(id, why) {
+    if (id !== this.sayId) return;
+    if (this.ttsWait) { clearTimeout(this.ttsWait.timer); this.ttsWait = null; }
+    this.setState({ ttsNote: 'Used the browser voice (' + (why || 'ElevenLabs unavailable') + ').' });
+    this.sayBrowser(id, this.state.saying);
+  }
+  bestBrowserVoice() {
+    const en = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
+    const rank = (v) => (/natural|neural|online/i.test(v.name) ? 0 : /google/i.test(v.name) ? 1 : /samantha|ava|allison|aria|jenny|zira/i.test(v.name) ? 2 : v.default ? 3 : 4)
+      + (/^en-US/i.test(v.lang) ? 0 : 0.5);
+    return en.sort((a, b) => rank(a) - rank(b))[0] || null;
+  }
+  sayBrowser(id, t) {
+    const done = () => this.sayDone(id);
+    if (!window.speechSynthesis || !t) { this.sayT = setTimeout(done, 2200); return; }
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(t);
-    const en = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
-    if (en.length) u.voice = en.find((v) => v.default) || en[0];
-    u.pitch = [1, 1.25, 0.8][this.state.voice];            // Warm / Bright / Deep
-    u.rate = [0.7, 0.85, 1, 1.2, 1.4][this.state.speed - 1];
+    const v = this.bestBrowserVoice();
+    if (v) u.voice = v;
+    u.pitch = [1, 1.2, 0.85][this.state.voice];            // Warm / Bright / Deep
+    u.rate = [0.75, 0.9, 1, 1.1, 1.25][this.state.speed - 1];
     u.volume = [0.2, 0.4, 0.6, 0.8, 1][this.state.vol - 1];
     u.onend = done; u.onerror = done;
     speechSynthesis.speak(u);
@@ -348,12 +465,16 @@ class Component extends DCLogic {
     catch (e) { this.setState({ conn: 'bad', bridgeError: 'That bridge address isn’t valid. Check Settings.' }); return; }
     sock.binaryType = 'blob';
     this.sock = sock;
-    sock.onopen = () => { if (this.sock === sock) this.setState({ conn: 'ok', bridgeError: '' }); };
+    sock.onopen = () => {
+      if (this.sock !== sock) return;
+      this.setState({ conn: 'ok', bridgeError: '' });
+      if (this.state.pauseReq === 'pause') sock.send(JSON.stringify({ type: 'cmd', cmd: 'pause' }));   // keep a pause across reconnects
+    };
     sock.onmessage = (ev) => { if (this.sock === sock) this.onBridge(ev.data); };
     sock.onclose = () => {
       if (this.sock !== sock) return;
       this.sock = null; this.setFrame('');
-      this.setState({ conn: 'bad', b: null });
+      this.setState({ conn: 'bad', b: null, ttsEngine: null });
       if (!this.gone) this.retryT = setTimeout(() => this.connect(), RETRY_MS);
     };
   }
@@ -364,15 +485,27 @@ class Component extends DCLogic {
     this.setFrame('');
   }
   onBridge(data) {
-    if (typeof data !== 'string') { this.setFrame(URL.createObjectURL(data)); return; }   // JPEG preview
+    if (typeof data !== 'string') { if (!this.isPaused()) this.setFrame(URL.createObjectURL(data)); return; }   // JPEG preview
     let m;
     try { m = JSON.parse(data); } catch (e) { return; }
+    if (m.type === 'hello') { this.setState({ ttsEngine: m.tts || null }); return; }
+    if (m.type === 'tts_audio' || m.type === 'tts_error') { this.onTts(m); return; }
     if (m.type === 'state') {
       const patch = Object.assign({ b: m }, this.syncCompose(m.text));
+      const req = this.state.pauseReq;                                                  // optimistic pause settles
+      if ((req === 'pause' && m.paused) || (req === 'resume' && !m.paused)) patch.pauseReq = null;
+      if (m.paused && this.frameUrl) this.setFrame('');
       if (this.state.bridgeError) patch.bridgeError = '';
       if (m.commits && m.commits.length) {                                             // "+HELLO" flash
         patch.flash = true;
         clearTimeout(this.flashT); this.flashT = setTimeout(() => this.setState({ flash: false }), 350);
+        // Confidence gate: a sign is only shown once the bridge has committed it (its model
+        // cleared its own threshold and held steady). Show it for a moment, as it lands in the box.
+        const hit = m.commits.filter((c) => /^[a-z0-9]/i.test(c.label || '')).pop();
+        if (hit) {
+          patch.caught = { label: String(hit.label).toUpperCase(), kind: hit.kind };
+          clearTimeout(this.caughtT); this.caughtT = setTimeout(() => this.setState({ caught: null }), 1600);
+        }
       }
       this.setState(patch);
     } else if (m.type === 'error') {
@@ -410,6 +543,18 @@ class Component extends DCLogic {
     if (old) URL.revokeObjectURL(old);
     if (!old !== !url && this._root) this.forceUpdate();     // first frame or lost feed: update prompt + overlay
   }
+  // Privacy pause: the bridge releases the webcam (its light goes off) and stops reading.
+  // The page hides the picture at once, without waiting for the bridge to confirm.
+  isPaused() {
+    const req = this.state.pauseReq;
+    return req ? req === 'pause' : !!(this.state.b && this.state.b.paused);
+  }
+  togglePause() {
+    const pause = !this.isPaused();
+    if (pause) this.setFrame('');
+    this.setState({ pauseReq: pause ? 'pause' : 'resume' });
+    if (this.sock && this.sock.readyState === WebSocket.OPEN) this.sock.send(JSON.stringify({ type: 'cmd', cmd: pause ? 'pause' : 'resume' }));
+  }
   send(cmd) {
     if (!this.sock || this.sock.readyState !== WebSocket.OPEN) { this.setState({ bridgeError: 'Not connected to the sign bridge yet.' }); return; }
     this.sock.send(JSON.stringify({ type: 'cmd', cmd: cmd }));
@@ -419,10 +564,12 @@ class Component extends DCLogic {
     if (this.state.conn !== 'ok' || e.metaKey || e.ctrlKey || e.altKey) return;
     const t = e.target, tag = (t && t.tagName) || '';
     if (/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(tag) || (t && t.isContentEditable)) return;
+    if (e.key === 'p' || e.key === 'P') { e.preventDefault(); this.togglePause(); return; }
     const map = { m: 'mode', ' ': 'space', Enter: 'confirm', w: 'word', l: 'letter', r: 'repeat', Backspace: 'backspace', c: 'clear' };
     const cmd = map[e.key.length === 1 ? e.key.toLowerCase() : e.key];
     if (!cmd) return;
     e.preventDefault();
+    if (this.isPaused() && !/^(space|backspace|clear)$/.test(cmd)) return;
     this.send(cmd);
   }
   push(who, text, mine) {
@@ -446,17 +593,20 @@ class Component extends DCLogic {
     const s = this.state; const st = this.stops[s.stop]; const nameFor = s.names[st.id];
     const LIL = '#7d5ba6', TEAL = '#558564', PINK = '#ffc0cb', BLUE = '#8fd9eb', GR = '#2f2f2f';
     const b = s.b;
+    const paused = this.isPaused();
     const capturing = !!(b && b.capture && b.capture.state === 'recording');
     let bWord = '', bHold = '', bPct = 0;
     if (b) {
+      // Nothing is named until it is confident: the label appears only once committed (s.caught).
+      // Before that the bar shows how close the reading is to its own model's threshold
+      // (word 0.29 calibrated, letter 0.75), never the guess itself.
+      const near = (v, bar) => (v && v.fresh && v.hands ? Math.min(1, (v.score || 0) / bar) : 0);
+      const closeness = Math.round(Math.max(near(b.word, WORD_BAR), near(b.letter, LETTER_BAR)) * 100);
       if (capturing) { bWord = 'Sign now'; bHold = 'Capturing a word…'; bPct = Math.round((b.capture.progress || 0) * 100); }
-      else if (b.kind === 'WORD' || b.kind === 'LETTER') {
-        bWord = String(b.label || '').toUpperCase();
-        bHold = (b.stable ? 'Caught ✓ ' : 'Hold steady… ') + (b.kind === 'WORD' ? 'word' : 'letter');
-        bPct = Math.round((((b.kind === 'WORD' ? b.word : b.letter) || {}).score || 0) * 100);
-      }
-      else if (b.kind === 'AMBIGUOUS') { bWord = 'Either'; bHold = 'Word or letter? Pick one below'; }
-      else if (b.kind === 'NOT_SURE') { bWord = '…'; bHold = 'Not sure yet'; }
+      else if (s.caught) { bWord = s.caught.label; bHold = 'Added ✓ ' + (s.caught.kind === 'WORD' ? 'word' : 'letter'); bPct = 100; }
+      else if (b.kind === 'WORD' || b.kind === 'LETTER') { bWord = '…'; bHold = 'Almost. Hold steady'; bPct = Math.max(closeness, 90); }
+      else if (b.kind === 'AMBIGUOUS') { bWord = 'Either'; bHold = 'Word or letter? Pick one below'; bPct = 100; }
+      else if (b.kind === 'NOT_SURE') { bWord = '…'; bHold = 'Reading your sign…'; bPct = closeness; }
       else { bWord = '—'; bHold = 'Show your hands, chest up'; }
     }
     const bText = b && b.text ? b.text.trim() : '';
@@ -470,7 +620,9 @@ class Component extends DCLogic {
     const HEALTH = { connecting: ['Connecting to sign bridge…', '#f3eefa', LIL], ok: ['Sign bridge connected', '#eaf4ee', '#2f5a3c'],
       bad: ['Sign bridge offline · retrying', '#fff0f3', '#8a2a3a'] }[s.conn] || ['', '#fff', GR];
     const pill = (on) => on ? 'background: ' + LIL + '; color: #ffffff; border: 1px solid ' + LIL + ';' : 'background: #ffffff; color: ' + GR + '; border: 1px solid #8a7f99;';
-    const voices = [['Warm', 'calm, mid-pitch'], ['Bright', 'younger, clear'], ['Deep', 'low, steady']];
+    const voices = s.ttsEngine === 'elevenlabs'
+      ? [['Warm', 'Sarah · calm'], ['Bright', 'Jessica · clear'], ['Deep', 'Brian · steady']]
+      : [['Warm', 'calm, mid-pitch'], ['Bright', 'younger, clear'], ['Deep', 'low, steady']];
     const sp = ['Slowest', 'Slow', 'Normal', 'Fast', 'Fastest'], vl = ['Quiet', 'Low', 'Medium', 'Loud', 'Max'];
     const log = this.stops.map((x, i) => ({ stop: x.label, lines: s.threads[i].map((m) => ({ who: m.who, text: m.text })) })).filter((g) => g.lines.length);
     return {
@@ -481,6 +633,11 @@ class Component extends DCLogic {
       urgentLabel: s.urgent ? 'Cancel alert' : 'I need help now',
       urgentStyle: 'min-height: 52px; padding: 0 22px; border-radius: 16px; font-weight: 700; font-size: 16px; ' + (s.urgent ? 'background: #ffffff; color: ' + GR + '; border: 2px solid ' + GR + ';' : 'background: ' + PINK + '; color: ' + GR + '; border: 2px solid ' + PINK + ';'),
       whoLabel: nameFor ? nameFor + ' · ' + st.who : st.name,
+      whoCardStyle: 'background: #ffffff; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #e9f8fc, #fff0f3); transition: border-color .3s; ' +
+        (s.whoFlash ? 'border: 3px solid ' + TEAL + ';' : 'border: 1px solid #ece6f2;'),
+      ttsTag: s.ttsEngine === 'elevenlabs' ? 'ElevenLabs voice' : 'Browser voice',
+      ttsTagStyle: 'font-size: 12px; white-space: nowrap; padding: 2px 10px; border-radius: 14px; background: ' + (s.ttsEngine === 'elevenlabs' ? '#d9efe0' : '#ffc0cb'),
+      ttsNote: s.ttsNote, hasTtsNote: !!s.ttsNote,
       nameCaught: !!nameFor, nameMissing: !nameFor, editing: s.editing, nameDraft: s.nameDraft,
       startEdit: () => this.setState({ editing: !s.editing, nameDraft: nameFor || '' }),
       onNameDraft: (e) => this.setState({ nameDraft: e.target.value }),
@@ -505,21 +662,28 @@ class Component extends DCLogic {
       camStyle: 'position: relative; overflow: hidden; height: 560px; max-height: 70vh; min-height: 360px; border-radius: 16px; display: flex; align-items: center; justify-content: center; ' + (s.flash ? 'border: 5px solid ' + TEAL + ';' : 'border: 1px solid #ece6f2;'),
       frameSrc: this.frameUrl || null,
       frameStyle: 'position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; ' + (this.frameUrl ? '' : 'display: none;'),
-      camPrompt: !this.frameUrl,
+      camPrompt: !this.frameUrl && !paused,
       camPromptText: s.conn === 'ok' ? 'Connected. Waiting for the camera…'
         : 'Waiting for the sign bridge at ' + s.ws + '. Start it on this laptop (see joa_frontend/README.md).',
-      showOverlay: !!(b && this.frameUrl),
+      showOverlay: !!(b && this.frameUrl) && !paused,
+      paused: paused, notPaused: !paused,
+      pauseLabel: paused ? 'Turn camera back on' : 'Pause camera',
+      pauseBtn: 'min-height: 48px; padding: 0 18px; border-radius: 14px; font-weight: 700; font-size: 16px; ' +
+        (paused ? 'border: none; background: ' + TEAL + '; color: #ffffff;' : 'border: 2px solid ' + GR + '; background: #ffffff; color: ' + GR + ';'),
+      togglePause: () => this.togglePause(),
+      pausedText: s.conn === 'ok' ? 'The camera is off. Nothing is being seen or read.' : 'Camera paused. It stays off when the bridge reconnects.',
+      cmdSpace: () => this.send('addspace'),
       liveWord: bWord, holdLabel: bHold,
       holdStyle: 'height: 8px; background: ' + TEAL + '; border-radius: 4px; transition: width .1s linear; width: ' + bPct + '%',
-      bridgeOff: s.conn !== 'ok',
-      liveBtn: btn(false, s.conn !== 'ok'), primaryBtn: btn(true, s.conn !== 'ok'),
-      captureLabel: spell ? 'Add a space' : (capturing ? 'Capturing…' : 'Capture a word (2 s)'),
-      cmdCapture: () => this.send(spell ? 'space' : 'capture'),
+      bridgeOff: s.conn !== 'ok', signOff: s.conn !== 'ok' || paused,
+      liveBtn: btn(false, s.conn !== 'ok' || paused), primaryBtn: btn(true, s.conn !== 'ok' || paused), spaceBtn: btn(false, s.conn !== 'ok'),
+      captureLabel: capturing ? 'Capturing…' : 'Capture a word (2 s)',
+      cmdCapture: () => this.send('capture'),
       cmdConfirm: () => this.send('confirm'),
       cmdMode: () => this.send('mode'),
       modeLabel: 'Mode: ' + (b ? (MODES[b.mode] || b.mode) : '–'),
       modeAria: 'Recognition mode ' + (b ? (MODES[b.mode] || b.mode) : 'unknown') + '. Tap to switch between Auto, Words and Spell',
-      signHint: 'Just sign. Words and letters are added automatically. Keys: Space capture · Enter confirm · M mode · W / L pick · Backspace undo.',
+      signHint: 'Just sign. Words and letters are added once they are confident. Lower your hand after spelling a word to add a space. Keys: P pause camera · Space end word · Enter confirm · M mode · W / L pick · Backspace undo.',
       statusText: s.bridgeError,
       statusStyle: s.bridgeError ? 'color: #8a2a3a; background: #fff0f3; padding: 10px 14px; border-radius: 14px; font-weight: 600; font-size: 15px' : 'min-height: 0',
       picking: !!(b && b.kind === 'AMBIGUOUS' && (b.alternatives || []).length),

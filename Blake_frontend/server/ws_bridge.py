@@ -62,8 +62,24 @@ client -> server, text, one command per message::
     {"type":"cmd","cmd":"repeat"}        R: repeat the last letter
     {"type":"cmd","cmd":"backspace"}     delete the last committed item
     {"type":"cmd","cmd":"clear"}         clear the text
+    {"type":"cmd","cmd":"addspace"}      end the current word (smart-split the letters) in any mode
+    {"type":"cmd","cmd":"pause"}         privacy: release the webcam (light off), stop reading
+    {"type":"cmd","cmd":"resume"}        reopen the webcam
 
-TTS is the browser's ``speechSynthesis`` on purpose: no audio over the socket.
+Pause is sticky for the life of this process (a reload does not silently turn the camera
+back on). While paused, state messages carry ``"paused": true`` and no frames are sent.
+
+Spacing: a word ends when the signer lowers their hand for ``SIGNBRIDGE_AUTO_SPACE_S``
+(default 1.0 s, 0 = off), on ``addspace``/``space``, or when a word sign follows letters. The
+letter run is then split into known words (``app.services.smart_spacing``):
+"HELLOMYNAME" -> "HELLO MY NAME"; names it can't cover are left whole.
+
+Text to speech (ElevenLabs, key in ``water_backend/.env``, never sent to the page)::
+
+    on connect, server -> client:  {"type":"hello","tts":"elevenlabs"|null}
+    client -> server:  {"type":"tts","id":7,"text":"Hello.","voice":"warm","speed":1.0}
+    server -> client:  {"type":"tts_audio","id":7,"mime":"audio/mpeg","audio":"<base64>"}
+                    or {"type":"tts_error","id":7,"error":"..."}   (the page falls back to the browser voice)
 
 Measured on an M2 (CPU, ``examples/hello.mp4`` as a fake camera): 15 state messages/s,
 14 preview frames/s, ~30 KB per frame, first ``WORD hello`` ~1.5 s after connect, and
@@ -77,6 +93,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import base64
 import json
 import logging
 import os
@@ -104,6 +121,7 @@ from app.config import settings  # noqa: E402
 from app.live import LiveConfig  # noqa: E402
 from app.model import SignRecognizer  # noqa: E402
 from app.models.alphabet_recognizer import AlphabetModel  # noqa: E402
+from app.services import smart_spacing  # noqa: E402
 from app.services.recognition_router import Kind, Mode, RouterConfig, auto_commit  # noqa: E402
 from app.services.text_buffer import TextBuffer  # noqa: E402
 from app.services.unified_session import SessionConfig, Snapshot, UnifiedSession  # noqa: E402
@@ -114,9 +132,22 @@ PREVIEW_WIDTH = int(os.environ.get("SIGNBRIDGE_PREVIEW_WIDTH", "480"))
 JPEG_QUALITY = int(os.environ.get("SIGNBRIDGE_JPEG_QUALITY", "70"))
 FRAME_HZ = float(os.environ.get("SIGNBRIDGE_FRAME_HZ", "15"))
 STATE_HZ = float(os.environ.get("SIGNBRIDGE_STATE_HZ", "20"))
+AUTO_SPACE_S = float(os.environ.get("SIGNBRIDGE_AUTO_SPACE_S", "1.0"))
 
 COMMANDS = frozenset({"mode", "capture", "space", "confirm", "word", "letter", "repeat",
-                      "backspace", "clear"})
+                      "backspace", "clear", "addspace"})
+TEXT_ONLY = frozenset({"backspace", "clear", "addspace", "space"})  # honoured while paused
+
+
+def _end_word(text: TextBuffer, now: float) -> bool:
+    """Close the letter run: smart-split it into known words, then add a space."""
+    split = text.split_trailing_run(smart_spacing.split_run)
+    return text.add_space(now) or split
+
+
+def _add_word(text: TextBuffer, label: str, now: float, *, manual: bool = False) -> bool:
+    text.split_trailing_run(smart_spacing.split_run)  # letters followed by a word sign
+    return text.add_word(label, now, manual=manual)
 
 
 # --------------------------------------------------------------------------- payload
@@ -157,6 +188,7 @@ def _payload(snap: Snapshot, text: TextBuffer, t: float, fps: float, source: str
         "capture": {"state": snap.capture_state, "progress": round(snap.capture_progress, 3)},
         "fps": round(fps, 1),
         "source": source,
+        "paused": False,
     }
 
 
@@ -185,6 +217,8 @@ class LiveHub:
         self._clients = 0
         self._thread: threading.Thread | None = None
         self._stop = threading.Event()
+        self._paused = threading.Event()   # privacy pause; sticky across reconnects
+        self.tts = None                    # ElevenLabsTTS when a key is configured
 
     # -- lifecycle -----------------------------------------------------------------------
 
@@ -231,6 +265,16 @@ class LiveHub:
         self._thread = None
 
     def command(self, cmd: str) -> bool:
+        if cmd == "pause":                 # handled at once, not queued behind a frame
+            self._paused.set()
+            with self._lock:
+                self._frame = None
+            log.info("pause requested")
+            return True
+        if cmd == "resume":
+            self._paused.clear()
+            log.info("resume requested")
+            return True
         if cmd not in COMMANDS:
             return False
         try:
@@ -245,19 +289,41 @@ class LiveHub:
 
     # -- camera loop (its own thread) -----------------------------------------------------
 
-    def _run(self) -> None:
+    def _open(self) -> tuple[cv2.VideoCapture | None, float]:
         source = self.source
         is_file = not source.isdigit()
         cap = cv2.VideoCapture(source if is_file else int(source))
         if not cap.isOpened():
             self.error = (f"could not open {source!r}" if is_file else
-                          f"could not open camera {source!r}; allow camera access for your "
-                          "terminal in System Settings > Privacy & Security > Camera")
+                          f"could not open camera {source!r}; check it isn't in use by another "
+                          "app and that camera access is allowed for this terminal")
             log.error(self.error)
-            return
+            cap.release()
+            return None, 30.0
         if not is_file:
             cap.set(cv2.CAP_PROP_FPS, 30)
-        file_fps = (cap.get(cv2.CAP_PROP_FPS) or 30.0) if is_file else 30.0
+        return cap, (cap.get(cv2.CAP_PROP_FPS) or 30.0) if is_file else 30.0
+
+    def _publish_paused(self, text: TextBuffer, now: float) -> None:
+        state = dict(self._state) if self._state else {"type": "state", "mode": "AUTO",
+                                                        "word": {}, "letter": {}, "fps": 0}
+        state.update(t=round(now, 3), kind="NO_HANDS", label=None, stable=False,
+                     reason="camera paused", alternatives=[], text=text.text, commits=[],
+                     capture={"state": "idle", "progress": 0.0}, source=self.source,
+                     paused=True, fps=0)
+        with self._lock:
+            self._frame = None
+            self._state, self._state_seq = state, self._state_seq + 1
+
+    def _run(self) -> None:
+        source = self.source
+        is_file = not source.isdigit()
+        cap: cv2.VideoCapture | None = None
+        file_fps = 30.0
+        if not self._paused.is_set():          # a sticky pause never opens the camera
+            cap, file_fps = self._open()
+            if cap is None:
+                return
 
         session: UnifiedSession | None = None
         try:
@@ -273,8 +339,26 @@ class LiveHub:
             frame_times: deque[float] = deque(maxlen=4000)
             t_text = t_frame = 0.0
             next_file_frame = time.perf_counter()
+            last_hand_t = time.perf_counter()
 
             while not self._stop.is_set():
+                if self._paused.is_set():
+                    if cap is not None:
+                        cap.release()
+                        cap = None
+                        log.info("camera paused: webcam released")
+                    now = time.perf_counter()
+                    self._drain_text_only(session, text, now)
+                    self._publish_paused(text, now)
+                    time.sleep(0.2)
+                    continue
+                if cap is None:
+                    cap, file_fps = self._open()
+                    if cap is None:
+                        break
+                    log.info("camera resumed")
+                    frame_times.clear()
+                    next_file_frame = last_hand_t = time.perf_counter()
                 if is_file:
                     next_file_frame += 1.0 / file_fps
                     time.sleep(max(0.0, next_file_frame - time.perf_counter()))
@@ -302,11 +386,20 @@ class LiveHub:
                 events += [auto_commit(snap.decision, None, c) for c in snap.letter_commits]
                 for ev in filter(None, events):
                     kind, label = ev
-                    added = (text.add_word(label, now) if kind is Kind.WORD
+                    added = (_add_word(text, label, now) if kind is Kind.WORD
                              else text.add_letter(label, now))
                     if added:
                         commits.append({"kind": kind.value, "label": label})
                         log.info("commit %s %r -> %r", kind.value, label, text.text)
+
+                # hand lowered after fingerspelling = end of word (auto space + smart split)
+                if snap.decision.letter.hands:
+                    last_hand_t = now
+                elif (AUTO_SPACE_S > 0 and now - last_hand_t >= AUTO_SPACE_S
+                      and text.trailing_letters()):
+                    if _end_word(text, now):
+                        session.alphabet.stream.reset_repeat_guard()
+                        log.info("auto space -> %r", text.text)
 
                 recent = [x for x in list(frame_times)[-40:] if now - x <= 1.0]
                 if now - t_text >= 1.0 / STATE_HZ:
@@ -327,7 +420,8 @@ class LiveHub:
         finally:
             if session is not None:
                 session.close()
-            cap.release()
+            if cap is not None:
+                cap.release()
             log.info("camera released")
 
     @staticmethod
@@ -340,6 +434,23 @@ class LiveHub:
         frame = cv2.flip(frame, 1)
         ok, buf = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY])
         return buf.tobytes() if ok else None
+
+    def _drain_text_only(self, session: UnifiedSession, text: TextBuffer, now: float) -> None:
+        """While paused: editing the sentence still works; recognition commands are dropped."""
+        while True:
+            try:
+                cmd = self._cmds.get_nowait()
+            except queue.Empty:
+                return
+            if cmd not in TEXT_ONLY:
+                continue
+            if cmd in ("addspace", "space"):
+                _end_word(text, now)
+            elif cmd == "backspace":
+                text.delete_last()
+            elif cmd == "clear":
+                text.clear()
+            session.alphabet.stream.reset_repeat_guard()
 
     def _apply_commands(self, session: UnifiedSession, text: TextBuffer, snap: Snapshot,
                         now: float) -> list[dict[str, str]]:
@@ -356,14 +467,17 @@ class LiveHub:
             elif cmd == "capture":
                 session.start_capture(now)
             elif cmd == "space":
-                if session.mode is Mode.SPELL:
-                    text.add_space(now)
+                if session.mode is Mode.SPELL or text.trailing_letters():
+                    _end_word(text, now)
                     session.alphabet.stream.reset_repeat_guard()
                 else:
                     session.start_capture(now)
+            elif cmd == "addspace":
+                _end_word(text, now)
+                session.alphabet.stream.reset_repeat_guard()
             elif cmd == "confirm":
                 if d.kind is Kind.WORD and d.label:
-                    text.add_word(d.label, now, manual=True)
+                    _add_word(text, d.label, now, manual=True)
                     session.dismiss_manual()
                     out.append({"kind": "WORD", "label": d.label})
                 elif d.kind is Kind.LETTER and d.label:
@@ -373,7 +487,7 @@ class LiveHub:
                 label = snap.manual.label if snap.manual and snap.manual.label else (
                     d.word.label if d.word.fresh and d.word.hands else None)
                 if label:
-                    text.add_word(label, now, manual=True)
+                    _add_word(text, label, now, manual=True)
                     session.dismiss_manual()
                     out.append({"kind": "WORD", "label": label})
             elif cmd == "letter":
@@ -401,6 +515,33 @@ async def handler(ws, hub: LiveHub) -> None:
         await ws.send(json.dumps({"type": "error", "error": hub.error}))
         await asyncio.to_thread(hub.release)
         return
+    await ws.send(json.dumps({"type": "hello", "tts": "elevenlabs" if hub.tts else None}))
+    tts_lock = asyncio.Lock()
+
+    async def speak(msg: dict[str, Any]) -> None:
+        """ElevenLabs runs in a worker thread; one request at a time per tab."""
+        rid = msg.get("id")
+        text = str(msg.get("text") or "").strip()[:500]
+        try:
+            speed = float(msg.get("speed") or 1.0)
+        except (TypeError, ValueError):
+            speed = 1.0
+        voice = msg.get("voice") if msg.get("voice") in ("warm", "bright", "deep") else "warm"
+        try:
+            if hub.tts is None:
+                raise RuntimeError("ElevenLabs is not configured on this laptop")
+            if not text:
+                raise RuntimeError("nothing to say")
+            async with tts_lock:
+                audio = await asyncio.to_thread(hub.tts.synthesize, text, voice, speed)
+            await ws.send(json.dumps({"type": "tts_audio", "id": rid, "mime": "audio/mpeg",
+                                      "audio": base64.b64encode(audio).decode("ascii")}))
+        except Exception as exc:  # noqa: BLE001  (the page falls back to the browser voice)
+            log.warning("tts failed: %s", exc)
+            try:
+                await ws.send(json.dumps({"type": "tts_error", "id": rid, "error": str(exc)[:200]}))
+            except Exception:  # noqa: BLE001
+                pass
 
     async def receive() -> None:
         async for raw in ws:
@@ -410,7 +551,9 @@ async def handler(ws, hub: LiveHub) -> None:
                 msg = json.loads(raw)
             except json.JSONDecodeError:
                 continue
-            if msg.get("type") == "cmd" and isinstance(msg.get("cmd"), str):
+            if msg.get("type") == "tts":
+                asyncio.create_task(speak(msg))
+            elif msg.get("type") == "cmd" and isinstance(msg.get("cmd"), str):
                 if not hub.command(msg["cmd"]):
                     await ws.send(json.dumps({"type": "warn",
                                               "error": f"unknown command {msg['cmd']!r}"}))
@@ -442,6 +585,18 @@ async def run(args: argparse.Namespace) -> None:
     word_rec = SignRecognizer(settings.model_dir)
     alpha = AlphabetModel(settings.model_dir / "alphabet")
     hub = LiveHub(word_rec, alpha, args.source)
+    try:  # word-model labels feed the smart-spacing vocabulary
+        smart_spacing.add_words(s.get("label", "") for s in getattr(word_rec, "signs", []))
+    except Exception:  # noqa: BLE001
+        log.warning("could not add word labels to the spacing vocabulary")
+    try:
+        from app.services.elevenlabs import ElevenLabsTTS
+        tts = ElevenLabsTTS()
+        hub.tts = tts if tts.available else None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("ElevenLabs unavailable: %s", exc)
+    log.info("text to speech: %s", "ElevenLabs" if hub.tts else
+             "browser voice (set ELEVENLABS_API_KEY in water_backend/.env for ElevenLabs)")
 
     async def handle(ws) -> None:
         await handler(ws, hub)

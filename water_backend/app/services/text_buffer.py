@@ -78,6 +78,34 @@ class TextBuffer:
             return False
         return self._push(Item("space", " ", t, True))
 
+    def trailing_letters(self) -> str:
+        """The run of letters at the end of the text ("" if the last item isn't a letter)."""
+        out = []
+        for item in reversed(self.items):
+            if item.kind != "letter":
+                break
+            out.append(item.text)
+        return "".join(reversed(out))
+
+    def split_trailing_run(self, split) -> bool:  # noqa: ANN001  (str -> list[str])
+        """Intelligent spacing: space the closing letter run into words with ``split``
+        (see ``smart_spacing.split_run``). Each letter stays its own item, so backspace
+        still removes one letter (or one inserted space) at a time."""
+        run = self.trailing_letters()
+        pieces = split(run) if run else [run]
+        if len(pieces) <= 1:
+            return False
+        start = len(self.items) - len(run)
+        letters, rebuilt = self.items[start:], []
+        k = 0
+        for n, piece in enumerate(pieces):
+            if n:
+                rebuilt.append(Item("space", " ", letters[k].t, False))
+            rebuilt.extend(letters[k:k + len(piece)])
+            k += len(piece)
+        self.items[start:] = rebuilt
+        return True
+
     def delete_last(self) -> Item | None:
         return self.items.pop() if self.items else None
 
