@@ -66,6 +66,14 @@ client -> server, text, one command per message::
     {"type":"cmd","cmd":"pause"}         privacy: release the webcam (light off), stop reading
     {"type":"cmd","cmd":"resume"}        reopen the webcam
 
+Under-the-hood viewer (joa_frontend/backend.html, embedded on how.html)::
+
+    client -> server:  {"type":"debug","on":true}
+    every state message then carries "debug": raw word/letter internals, the 21 hand
+    landmarks (0..1 of the mirrored frame) and, ~5/s, "skeleton": a base64 JPEG of the
+    image the letter model actually classifies. Off again with {"type":"debug","on":false}
+    or on disconnect. The landmarks and model internals are tiny, so they are always sent.
+
 Pause is sticky for the life of this process (a reload does not silently turn the camera
 back on). While paused, state messages carry ``"paused": true`` and no frames are sent.
 
@@ -192,6 +200,50 @@ def _payload(snap: Snapshot, text: TextBuffer, t: float, fps: float, source: str
     }
 
 
+SKELETON_HZ = 5.0
+
+
+def _debug(snap: Snapshot, fw: int, fh: int, skeleton: str | None) -> dict[str, Any]:
+    """Raw model internals for the under-the-hood viewer (no UI shaping)."""
+    w, lt = snap.word, snap.letter
+    out: dict[str, Any] = {
+        "frame": [fw, fh],
+        "word": {
+            "state": w.state, "label": w.label, "conf": round(float(w.confidence), 4),
+            "stable": bool(w.stable), "reason": w.reason,
+            "top": [[lab, round(float(sc), 4)] for lab, sc in list(w.top)[:5]],
+            "recent": list(w.emitted)[-6:],
+        },
+        "letter": None,
+    }
+    if lt is not None:
+        pts = None
+        if lt.points_px is not None and fw and fh:
+            arr = np.asarray(lt.points_px, dtype=np.float32).reshape(-1, 2)
+            pts = [[round(float(x) / fw, 4), round(float(y) / fh, 4)] for x, y in arr]
+        out["letter"] = {
+            "hand": bool(lt.hand_detected), "best": lt.best, "conf": round(float(lt.confidence), 4),
+            "static_best": lt.static_best, "motion_override": lt.motion_override,
+            "moving": bool(lt.moving), "passes": bool(lt.passes_threshold),
+            "stable": bool(lt.stable), "progress": round(float(lt.progress), 3),
+            "infer_ms": round(float(lt.infer_ms), 1),
+            "top": [[g.label, round(float(g.confidence), 4)] for g in lt.top],
+            "points": pts,
+        }
+    if skeleton:
+        out["skeleton"] = skeleton
+    return out
+
+
+def _skeleton_jpeg(snap: Snapshot) -> str | None:
+    lt = snap.letter
+    if lt is None or lt.skeleton_rgb is None:
+        return None
+    ok, buf = cv2.imencode(".jpg", cv2.cvtColor(lt.skeleton_rgb, cv2.COLOR_RGB2BGR),
+                           [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+    return base64.b64encode(buf.tobytes()).decode("ascii") if ok else None
+
+
 # --------------------------------------------------------------------------- hub
 
 
@@ -219,6 +271,11 @@ class LiveHub:
         self._stop = threading.Event()
         self._paused = threading.Event()   # privacy pause; sticky across reconnects
         self.tts = None                    # ElevenLabsTTS when a key is configured
+        self._debug_n = 0                  # tabs that asked for the skeleton image
+
+    def set_debug(self, delta: int) -> None:
+        with self._lock:
+            self._debug_n = max(0, self._debug_n + delta)
 
     # -- lifecycle -----------------------------------------------------------------------
 
@@ -337,7 +394,7 @@ class LiveHub:
                      source, sess.mode.value)
             text = TextBuffer()
             frame_times: deque[float] = deque(maxlen=4000)
-            t_text = t_frame = 0.0
+            t_text = t_frame = t_skel = 0.0
             next_file_frame = time.perf_counter()
             last_hand_t = time.perf_counter()
 
@@ -373,6 +430,7 @@ class LiveHub:
 
                 now = time.perf_counter()
                 frame_times.append(now)
+                fh, fw = frame.shape[:2]
                 session.submit_frame(frame, now)   # both models; non-blocking, bounded
                 session.tick(now)
                 for err in (session.word.error, session.alphabet.error):
@@ -405,6 +463,11 @@ class LiveHub:
                 if now - t_text >= 1.0 / STATE_HZ:
                     t_text = now
                     state = _payload(snap, text, now, len(recent), source, commits)
+                    skel = None
+                    if self._debug_n > 0 and now - t_skel >= 1.0 / SKELETON_HZ:
+                        t_skel = now
+                        skel = _skeleton_jpeg(snap)
+                    state["debug"] = _debug(snap, fw, fh, skel)
                     with self._lock:
                         self._state, self._state_seq = state, self._state_seq + 1
 
@@ -517,6 +580,7 @@ async def handler(ws, hub: LiveHub) -> None:
         return
     await ws.send(json.dumps({"type": "hello", "tts": "elevenlabs" if hub.tts else None}))
     tts_lock = asyncio.Lock()
+    debug_on = [False]
 
     async def speak(msg: dict[str, Any]) -> None:
         """ElevenLabs runs in a worker thread; one request at a time per tab."""
@@ -553,6 +617,11 @@ async def handler(ws, hub: LiveHub) -> None:
                 continue
             if msg.get("type") == "tts":
                 asyncio.create_task(speak(msg))
+            elif msg.get("type") == "debug":
+                on = bool(msg.get("on"))
+                if on != debug_on[0]:
+                    debug_on[0] = on
+                    hub.set_debug(1 if on else -1)
             elif msg.get("type") == "cmd" and isinstance(msg.get("cmd"), str):
                 if not hub.command(msg["cmd"]):
                     await ws.send(json.dumps({"type": "warn",
@@ -577,6 +646,8 @@ async def handler(ws, hub: LiveHub) -> None:
         pass
     finally:
         recv.cancel()
+        if debug_on[0]:
+            hub.set_debug(-1)
         await asyncio.to_thread(hub.release)
 
 

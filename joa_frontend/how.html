@@ -98,6 +98,15 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 <span style="font-size: 13px; color: #555">Today it all runs locally on one laptop. The only thing sent out is the text being spoken, which goes to ElevenLabs for the voice. As Signify grows, recognition moves to cloud processing so any tablet or phone can use it with no laptop.</span>
 </section>
 
+<section style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+<div><h2 style="margin: 0; font-size: 20px">Under the hood, live</h2>
+<p style="margin: 4px 0 0; color: #444; max-width: 760px">The raw engineering view of the same webcam feed: the 21 hand landmarks MediaPipe tracks, the skeleton image the letter model classifies, both models' scores against their confidence bars, the router's decision, and every message the backend sends. It needs the Signify bridge running on this laptop.</p></div>
+<a href="backend.html" target="_blank" rel="noopener" style="min-height: 44px; padding: 0 18px; border-radius: 14px; border: 1px solid #7d5ba6; background: #ffffff; color: #2f2f2f; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none">Open full screen ↗</a>
+</div>
+<iframe src="backend.html" title="Signify backend viewer: live webcam, landmarks and model scores" loading="lazy" style="width: 100%; height: 1150px; border: 0; border-radius: 14px; background: #0e1014"></iframe>
+</section>
+
 <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
 <div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 32px; font-weight: 700">72.1%</div><p style="margin: 4px 0 0; color: #444">Top-1 accuracy on 250 signs (88.1% top-5)</p><span style="font-size: 12px; color: #555">Test set: 14,396 clips from 3 signers held out of training. Letters A–Z: 93.7%</span></div>
 <div style="background: #ffffff; border: 1px solid #ece6f2; border-radius: 20px; box-shadow: 0 1px 2px rgba(47,47,47,.04), 0 8px 24px rgba(125,91,166,.06); padding: 24px"><div style="font-size: 32px; font-weight: 700">~1 s</div><p style="margin: 4px 0 0; color: #444">Sign-to-caption time</p><span style="font-size: 12px; color: #555">Letters commit in ~0.4 s, words in ~1 s (estimated from the confidence settings)</span></div>
