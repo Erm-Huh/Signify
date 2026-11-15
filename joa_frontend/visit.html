@@ -183,6 +183,13 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 <button type="button" onClick="{{clearSigns}}" style="min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">Start over</button>
 <span style="font-size: 12px; color: #444">{{composeHint}}</span>
 </div>
+<sc-if value="{{hasSmart}}" hint-placeholder-val="{{false}}">
+<div aria-live="polite" style="display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; background: #eef6f0; border: 1px solid #558564; border-radius: 16px; padding: 10px 12px">
+<div style="flex: 1 1 220px; display: flex; flex-direction: column"><span style="font-size: 11px; font-weight: 700; letter-spacing: .06em; color: #2f2f2f">✨ SMART SENTENCE</span><strong style="font-size: 19px">{{smartText}}</strong></div>
+<button type="button" onClick="{{saySmart}}" style="min-height: 44px; padding: 0 18px; border-radius: 14px; border: none; background: #558564; color: #ffffff; font-weight: 700">Say this</button>
+<button type="button" onClick="{{useSmart}}" style="min-height: 44px; padding: 0 14px; border-radius: 14px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f">Edit</button>
+</div>
+</sc-if>
 <div style="background: #fff0f3; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px">
 <div><span style="display: block; font-size: 12px; font-weight: 600; color: #444">FOR THE SPEAKER</span><strong style="font-size: 16px">Talk to the patient</strong></div>
@@ -261,6 +268,34 @@ function glowStyle(on, g) {
   if (!on || k === 0) return 'border: 1px solid #ece6f2; box-shadow: 0 0 0 0 rgba(85,133,100,0);';
   return 'border: 1px solid #558564; box-shadow: 0 0 0 ' + Math.round(3 + 9 * k) + 'px rgba(85,133,100,' + (0.10 + 0.22 * k).toFixed(2) + '), 0 0 ' +
     Math.round(18 + 42 * k) + 'px ' + Math.round(4 * k) + 'px rgba(85,133,100,' + (0.12 + 0.33 * k).toFixed(2) + ');';
+}
+// Smart sentence (demo): signed words come out in ASL order ("WHERE POTTY"). When they match a
+// known clinic request, suggest a natural English sentence the patient can say with one tap.
+// Rule based for now: every group must appear (any word in a group counts); the rule with the
+// most groups wins. A language model is the long-term version (see the roadmap).
+const SMART = [
+  { need: [['where'], ['potty', 'bathroom', 'restroom', 'toilet']], say: 'Where’s the bathroom?' },
+  { need: [['where'], ['water', 'drink']], say: 'Where can I get some water?' },
+  { need: [['where'], ['food', 'eat']], say: 'Where can I get something to eat?' },
+  { need: [['thirsty'], ['water', 'drink']], say: 'I’m thirsty. Could I have some water, please?' },
+  { need: [['water', 'drink'], ['please']], say: 'Could I have some water, please?' },
+  { need: [['hungry'], ['food', 'eat']], say: 'I’m hungry. Could I get something to eat?' },
+  { need: [['head'], ['hot']], say: 'My head feels hot. I think I have a fever.' },
+  { need: [['eye'], ['see'], ['not', 'no']], say: 'I’m having trouble seeing.' },
+  { need: [['yesterday'], ['sleepy', 'sleep', 'tired']], say: 'I’ve felt very tired since yesterday.' },
+  { need: [['thank'], ['bye']], say: 'Thank you. Goodbye!' },
+  { need: [['sick']], say: 'I feel sick.' },
+  { need: [['thirsty']], say: 'I’m thirsty.' },
+  { need: [['hungry']], say: 'I’m hungry.' },
+  { need: [['potty', 'bathroom']], say: 'I need to use the bathroom.' }
+];
+function smartSentence(text) {
+  const words = new Set(String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean));
+  let best = null;
+  for (const r of SMART) {
+    if (r.need.every((g) => g.some((w) => words.has(w))) && (!best || r.need.length > best.need.length)) best = r;
+  }
+  return best ? best.say : '';
 }
 const pct = (x) => Math.round((x || 0) * 100) + '%';
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -633,6 +668,8 @@ class Component extends DCLogic {
     const tidy = (t) => t.replace(/\bi\b/g, 'I').replace(/^\s+/, '').replace(/^./, (c) => c.toUpperCase());
     const composeText = s.composeEdited ? s.compose : tidy(s.compose);
     const composeEmpty = !composeText.trim();
+    const smart = composeEmpty ? '' : smartSentence(composeText);
+    const hasSmart = !!smart && smart.toLowerCase().replace(/[^a-z]/g, '') !== composeText.toLowerCase().replace(/[^a-z]/g, '');
     const btn = (primary, off) => 'min-height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 600; ' + (off ? 'opacity: .45; cursor: not-allowed; ' : '') +
       (primary ? 'background: ' + LIL + '; color: #ffffff; border: 1px solid ' + LIL + ';' : 'background: #ffffff; color: ' + LIL + '; border: 1px solid ' + LIL + ';');
     const HEALTH = { connecting: ['Connecting to sign bridge…', '#f3eefa', LIL], ok: ['Sign bridge connected', '#eaf4ee', '#2f5a3c'],
@@ -715,6 +752,9 @@ class Component extends DCLogic {
       onCompose: (e) => this.setState({ compose: e.target.value, composeEdited: true }),
       composeKey: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!composeEmpty) this.sayComposeNow(composeText); } },
       sayCompose: () => { if (!composeEmpty) this.sayComposeNow(composeText); },
+      hasSmart: hasSmart, smartText: smart,
+      saySmart: () => { if (smart) this.sayComposeNow(smart); },
+      useSmart: () => { if (smart) this.setState({ compose: smart, composeEdited: true }); },
       composeStyle: 'width: 100%; box-sizing: border-box; margin-top: auto; min-height: 110px; resize: vertical; border-radius: 16px; padding: 12px 14px; ' +
         'font: inherit; font-size: 22px; font-weight: 600; line-height: 1.35; color: ' + GR + '; background: #ffffff; outline-offset: 2px; ' +
         (s.flash ? 'border: 2px solid ' + TEAL + ';' : 'border: 2px solid ' + LIL + ';'),
