@@ -33,14 +33,16 @@
   const EVENTS = { onclick: 'click', onchange: 'change', onsubmit: 'submit', oninput: 'input', onkeydown: 'keydown', onfocus: 'focus', onblur: 'blur' };
   const PROPS = { value: 'value', checked: 'checked', disabled: 'disabled', selected: 'selected' };
 
+  const SVG_NS = 'http://www.w3.org/2000/svg';
   // Build a fresh DOM tree (detached) from the template for the current values.
-  function build(node, scope, out) {
+  // Inline <svg> (and everything inside it) is created in the SVG namespace so it renders.
+  function build(node, scope, out, svg) {
     if (node.nodeType === 3) { out.appendChild(document.createTextNode(interp(node.nodeValue, scope))); return; }
     if (node.nodeType !== 1) return;
     const tag = node.tagName.toLowerCase();
     if (tag === 'sc-if') {
       const m = (node.getAttribute('value') || '').match(WHOLE);
-      if (m && lookup(m[1], scope)) node.childNodes.forEach((c) => build(c, scope, out));
+      if (m && lookup(m[1], scope)) node.childNodes.forEach((c) => build(c, scope, out, svg));
       return;
     }
     if (tag === 'sc-for') {
@@ -49,11 +51,12 @@
       const as = node.getAttribute('as') || 'item';
       list.forEach((item, i) => {
         const inner = Object.assign(Object.create(scope), { [as]: item, $index: i });
-        node.childNodes.forEach((c) => build(c, inner, out));
+        node.childNodes.forEach((c) => build(c, inner, out, svg));
       });
       return;
     }
-    const el = document.createElement(tag);
+    const inSvg = svg || tag === 'svg';
+    const el = inSvg ? document.createElementNS(SVG_NS, node.tagName) : document.createElement(tag);
     el.__on = {}; el.__props = {};
     for (const a of node.attributes) {
       const name = a.name.toLowerCase();
@@ -64,15 +67,15 @@
       if (whole) {
         const v = lookup(whole[1], scope);
         if (v === false || v == null) continue;
-        el.setAttribute(name, v === true ? '' : String(v));
-      } else el.setAttribute(name, interp(a.value, scope));
+        el.setAttribute(inSvg ? a.name : name, v === true ? '' : String(v));
+      } else el.setAttribute(inSvg ? a.name : name, interp(a.value, scope));
     }
     // Text inputs: React-style onChange fires on every keystroke.
     if (el.__on.change && (tag === 'textarea' || (tag === 'input' && !/^(checkbox|radio|range|file)$/.test(el.getAttribute('type') || '')))) {
       el.__on.input = el.__on.change; delete el.__on.change;
     }
     if (tag === 'input' && (el.getAttribute('type') || '') === 'range' && el.__on.change) el.__on.input = el.__on.change;
-    node.childNodes.forEach((c) => build(c, scope, el));
+    node.childNodes.forEach((c) => build(c, scope, el, inSvg));
     out.appendChild(el);
   }
 

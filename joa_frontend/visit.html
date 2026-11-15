@@ -18,6 +18,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 @media (prefers-reduced-motion:reduce){button,a[style*="border-radius"]{transition:none}button:hover,button:active,a[style*="border-radius"]:hover,a[style*="border-radius"]:active{transform:none}}
 .ph{background-color:#e6f6fa;background-image:repeating-linear-gradient(45deg,transparent 0 10px,rgba(85,133,100,.10) 10px 11px)}
 #compose::placeholder{font-size:16px;font-weight:400;color:#666}
+.cam-glow{transition:box-shadow .45s ease,border-color .45s ease}
+@media (prefers-reduced-motion:reduce){.cam-glow{transition:none}}
 </style>
 <script src="assets/view.js"></script>
 </head>
@@ -107,9 +109,10 @@ button:focus-visible,a:focus-visible{outline:3px solid #7d5ba6;outline-offset:2p
 <form onSubmit="{{saveSettings}}" style="background: #f3eefa; border-radius: 16px; padding: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end">
 <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; flex: 1 1 240px">Sign bridge address (laptop)<input type="url" value="{{wsDraft}}" onChange="{{onWsDraft}}" spellcheck="false" style="min-height: 44px; border: 1px solid #8a7f99; border-radius: 14px; padding: 0 12px; font: inherit; font-weight: 400"></label>
 <button type="submit" style="min-height: 44px; padding: 0 18px; border-radius: 14px; border: none; background: #7d5ba6; color: #ffffff; font-weight: 700">Save</button>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; flex: 1 1 100%">Sign glow<input type="range" min="0" max="10" value="{{glow}}" onChange="{{setGlow}}" aria-label="Glow around the camera when a sign is accepted" style="flex: 1; accent-color: #558564"><span style="width: 64px; font-weight: 400">{{glowLabel}}</span><button type="button" onClick="{{previewGlow}}" style="min-height: 36px; padding: 0 12px; border-radius: 12px; border: 1px solid #8a7f99; background: #ffffff; color: #2f2f2f; font-weight: 600">Preview</button></label>
 </form>
 </sc-if></div>
-<div class="ph" style="{{camStyle}}">
+<div class="cam-glow" style="{{camStyle}}">
 <img id="preview" src="{{frameSrc}}" alt="Live camera preview from the sign bridge" style="{{frameStyle}}">
 <sc-if value="{{camPrompt}}"><div style="position: relative; text-align: center; color: #444; font-size: 18px; font-weight: 600; padding: 16px; max-width: 420px">{{camPromptText}}</div></sc-if>
 <div style="display: contents"><sc-if value="{{paused}}" hint-placeholder-val="{{false}}">
@@ -251,6 +254,14 @@ const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 };
+// Soft glow around the camera when a sign is accepted. g = 0..10 from Settings (0 = off).
+// Only the shadow changes, never the border width, so nothing on the page moves.
+function glowStyle(on, g) {
+  const k = Math.max(0, Math.min(10, g)) / 10;
+  if (!on || k === 0) return 'border: 1px solid #ece6f2; box-shadow: 0 0 0 0 rgba(85,133,100,0);';
+  return 'border: 1px solid #558564; box-shadow: 0 0 0 ' + Math.round(3 + 9 * k) + 'px rgba(85,133,100,' + (0.10 + 0.22 * k).toFixed(2) + '), 0 0 ' +
+    Math.round(18 + 42 * k) + 'px ' + Math.round(4 * k) + 'px rgba(85,133,100,' + (0.12 + 0.33 * k).toFixed(2) + ');';
+}
 const pct = (x) => Math.round((x || 0) * 100) + '%';
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const TTS_VOICES = ['warm', 'bright', 'deep'];              // ElevenLabs slots (water_backend/app/services/elevenlabs.py)
@@ -331,6 +342,7 @@ class Component extends DCLogic {
     this.state = { stop: 0, visited: [0], running: false, chips: [], hold: 0, flash: false, caught: null, urgent: false, interp: false,
       threads: [[], [], [], [], []], voice: 0, speed: 3, vol: 4, auto: true, saying: '', flipped: false, draft: '', copied: false, queue: 2, listening: false, heard: '', lines: 0, names: {}, editing: false, nameDraft: '',
       ws: store.get('signify.ws') || DEFAULT_WS, conn: 'connecting',
+      glow: (() => { const g = Number(store.get('signify.glow')); return Number.isFinite(g) && store.get('signify.glow') !== null ? Math.max(0, Math.min(10, g)) : 6; })(),
       settingsOpen: false, wsDraft: '', compose: '', composeEdited: false, b: null, bridgeError: '', listenError: '',
       ttsEngine: null, ttsNote: '', pauseReq: null, whoFlash: false };
     this.audio = null; this.ttsWait = null; this.whoT = null;
@@ -509,7 +521,7 @@ class Component extends DCLogic {
       }
       if (hit) {                                                                        // "+HELLO" flash
         patch.flash = true;
-        clearTimeout(this.flashT); this.flashT = setTimeout(() => this.setState({ flash: false }), 350);
+        clearTimeout(this.flashT); this.flashT = setTimeout(() => this.setState({ flash: false }), 900);
         patch.caught = { label: String(hit.label).toUpperCase(), kind: hit.kind };
         clearTimeout(this.caughtT); this.caughtT = setTimeout(() => this.setState({ caught: null }), 1600);
       }
@@ -654,6 +666,9 @@ class Component extends DCLogic {
       requestInterp: () => { this.setState({ interp: true }); this.push('System', 'A certified medical interpreter has been requested.', false); },
       interpLabel: s.interp ? 'Interpreter requested ✓' : 'Request an interpreter',
       healthLabel: HEALTH[0], healthStyle: 'font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 16px; background: ' + HEALTH[1] + '; color: ' + HEALTH[2],
+      glow: s.glow, glowLabel: s.glow === 0 ? 'Off' : s.glow <= 3 ? 'Subtle' : s.glow <= 7 ? 'Soft' : 'Strong',
+      setGlow: (e) => { const g = Number(e.target.value); store.set('signify.glow', String(g)); this.setState({ glow: g }); },
+      previewGlow: () => { this.setState({ flash: true }); clearTimeout(this.flashT); this.flashT = setTimeout(() => this.setState({ flash: false }), 900); },
       settingsOpen: s.settingsOpen, settingsExpanded: s.settingsOpen ? 'true' : 'false',
       toggleSettings: () => this.setState(s.settingsOpen ? { settingsOpen: false } : { settingsOpen: true, wsDraft: s.ws }),
       wsDraft: s.wsDraft, onWsDraft: (e) => this.setState({ wsDraft: e.target.value }),
@@ -665,7 +680,7 @@ class Component extends DCLogic {
         store.set('signify.ws', ws);
         this.connect();
       },
-      camStyle: 'position: relative; overflow: hidden; height: 560px; max-height: 70vh; min-height: 360px; border-radius: 16px; display: flex; align-items: center; justify-content: center; ' + (s.flash ? 'border: 5px solid ' + TEAL + ';' : 'border: 1px solid #ece6f2;'),
+      camStyle: 'position: relative; overflow: hidden; background: #f3eefa; height: 560px; max-height: 70vh; min-height: 360px; border-radius: 16px; display: flex; align-items: center; justify-content: center; ' + glowStyle(s.flash, s.glow),
       frameSrc: this.frameUrl || null,
       frameStyle: 'position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; ' + (this.frameUrl ? '' : 'display: none;'),
       camPrompt: !this.frameUrl && !paused,
