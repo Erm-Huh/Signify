@@ -202,6 +202,26 @@ def _payload(snap: Snapshot, text: TextBuffer, t: float, fps: float, source: str
 
 SKELETON_HZ = 5.0
 
+# Look-alike guard: right after a word is typed, its known look-alikes (same place, similar
+# hand) are not auto-typed for LOOKALIKE_S seconds, e.g. WATER is often followed by TALK while
+# the hand is still at the chin. Pairs from the model's held-out confusion table + live testing.
+LOOKALIKE_S = float(os.environ.get("SIGNBRIDGE_LOOKALIKE_S", "1.5"))
+_PAIRS = [("water", "talk"), ("awake", "wake"), ("quiet", "shh"), ("sleep", "nap"),
+          ("pen", "pencil"), ("lamp", "snack"), ("finger", "wait"), ("cry", "cheek"),
+          ("mouth", "lips"), ("brother", "boy")]
+LOOKALIKES: dict[str, set[str]] = {}
+for _a, _b in _PAIRS:
+    LOOKALIKES.setdefault(_a, set()).add(_b)
+    LOOKALIKES.setdefault(_b, set()).add(_a)
+
+
+def lookalike_blocked(last: tuple[str, float] | None, label: str, now: float) -> bool:
+    """True if `label` is a look-alike of the word typed less than LOOKALIKE_S ago."""
+    if last is None or LOOKALIKE_S <= 0:
+        return False
+    prev, t = last
+    return now - t < LOOKALIKE_S and label.lower() in LOOKALIKES.get(prev.lower(), ())
+
 
 def _debug(snap: Snapshot, fw: int, fh: int, skeleton: str | None) -> dict[str, Any]:
     """Raw model internals for the under-the-hood viewer (no UI shaping)."""
@@ -398,6 +418,7 @@ class LiveHub:
             # commits made between two state messages (the loop runs ~2x faster than STATE_HZ);
             # without this, a letter could land in "text" but never be announced in "commits"
             pending: list[dict[str, str]] = []
+            last_word: tuple[str, float] | None = None   # for the look-alike guard
             next_file_frame = time.perf_counter()
             last_hand_t = time.perf_counter()
 
@@ -447,8 +468,13 @@ class LiveHub:
                 events += [auto_commit(snap.decision, None, c) for c in snap.letter_commits]
                 for ev in filter(None, events):
                     kind, label = ev
+                    if kind is Kind.WORD and lookalike_blocked(last_word, label, now):
+                        log.info("look-alike %r right after %r: skipped", label, last_word[0])
+                        continue
                     added = (_add_word(text, label, now) if kind is Kind.WORD
                              else text.add_letter(label, now))
+                    if added and kind is Kind.WORD:
+                        last_word = (label, now)
                     if added:
                         commits.append({"kind": kind.value, "label": label})
                         log.info("commit %s %r -> %r", kind.value, label, text.text)
