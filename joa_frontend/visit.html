@@ -658,7 +658,8 @@ class Component extends DCLogic {
       if (capturing) { bWord = 'Sign now'; bHold = 'Capturing a word…'; bPct = Math.round((b.capture.progress || 0) * 100); }
       else if (s.caught) { bWord = s.caught.label; bHold = 'Added ✓ ' + (s.caught.kind === 'WORD' ? 'word' : 'letter'); bPct = 100; }
       else if (b.kind === 'WORD' || b.kind === 'LETTER') { bWord = '…'; bHold = 'Almost. Hold steady'; bPct = Math.max(closeness, 90); }
-      else if (b.kind === 'AMBIGUOUS') { bWord = 'Either'; bHold = 'Word or letter? Pick one below'; bPct = 100; }
+      // Both models confident (e.g. WATER is a W at the chin): show the same "…" and let them sign again.
+      else if (b.kind === 'AMBIGUOUS') { bWord = '…'; bHold = 'Reading your sign…'; bPct = Math.max(closeness, 90); }
       else if (b.kind === 'NOT_SURE') { bWord = '…'; bHold = 'Reading your sign…'; bPct = closeness; }
       else { bWord = '—'; bHold = 'Show your hands, chest up'; }
     }
@@ -744,7 +745,7 @@ class Component extends DCLogic {
       signHint: 'Just sign. Words and letters are added once they are confident. Lower your hand after spelling a word to add a space. Keys: P pause camera · Space end word · Enter confirm · M mode · W / L pick · Backspace undo.',
       statusText: s.bridgeError,
       statusStyle: s.bridgeError ? 'color: #8a2a3a; background: #fff0f3; padding: 10px 14px; border-radius: 14px; font-weight: 600; font-size: 15px' : 'min-height: 0',
-      picking: !!(b && b.kind === 'AMBIGUOUS' && (b.alternatives || []).length),
+      picking: false,   // no "pick one" panel for AMBIGUOUS: the patient just signs again
       altTitle: 'Both models see something. Pick one:',
       altChoices: b ? (b.alternatives || []).map((a) => ({ label: (a[0] === 'WORD' ? 'Word “' : 'Letter “') + a[1] + '”',
         pick: () => this.send(a[0] === 'WORD' ? 'word' : 'letter') })) : [],
