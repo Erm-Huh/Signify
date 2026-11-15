@@ -66,7 +66,7 @@ client -> server, text, one command per message::
     {"type":"cmd","cmd":"pause"}         privacy: release the webcam (light off), stop reading
     {"type":"cmd","cmd":"resume"}        reopen the webcam
 
-Under-the-hood viewer (joa_frontend/backend.html, embedded on how.html)::
+Under-the-hood viewer (the "Under the hood, live" section of joa_frontend/how.html)::
 
     client -> server:  {"type":"debug","on":true}
     every state message then carries "debug": raw word/letter internals, the 21 hand
@@ -395,6 +395,9 @@ class LiveHub:
             text = TextBuffer()
             frame_times: deque[float] = deque(maxlen=4000)
             t_text = t_frame = t_skel = 0.0
+            # commits made between two state messages (the loop runs ~2x faster than STATE_HZ);
+            # without this, a letter could land in "text" but never be announced in "commits"
+            pending: list[dict[str, str]] = []
             next_file_frame = time.perf_counter()
             last_hand_t = time.perf_counter()
 
@@ -459,10 +462,12 @@ class LiveHub:
                         session.alphabet.stream.reset_repeat_guard()
                         log.info("auto space -> %r", text.text)
 
+                pending.extend(commits)
                 recent = [x for x in list(frame_times)[-40:] if now - x <= 1.0]
                 if now - t_text >= 1.0 / STATE_HZ:
                     t_text = now
-                    state = _payload(snap, text, now, len(recent), source, commits)
+                    state = _payload(snap, text, now, len(recent), source, pending)
+                    pending = []
                     skel = None
                     if self._debug_n > 0 and now - t_skel >= 1.0 / SKELETON_HZ:
                         t_skel = now
